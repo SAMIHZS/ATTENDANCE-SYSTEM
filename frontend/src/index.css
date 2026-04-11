@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Material Symbols ─── */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* ─── Base ─── */
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-surface text-on-surface;
+    min-height: 100dvh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Manrope', sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Hide scrollbar on touch/mobile list containers */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Thin styled scrollbar for desktop admin */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #f7f9fb; }
+  ::-webkit-scrollbar-thumb { background: #d8dadc; border-radius: 10px; }
+}
+
+/* ─── Component Utilities ─── */
+@layer components {
+  /* Frosted glass top bar (used on all screens) */
+  .top-app-bar {
+    @apply fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16;
+    background: rgba(19, 27, 46, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* Frosted glass bottom nav */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 rounded-t-3xl;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 -4px 24px rgba(25, 28, 30, 0.04);
+  }
+
+  /* Editorial card shadow */
+  .shadow-editorial {
+    box-shadow: 0 4px 24px rgba(25, 28, 30, 0.04);
+  }
+
+  /* Active scale for touch */
+  .tap-target {
+    @apply active:scale-95 transition-transform duration-150;
+  }
+
+  /* Asymmetric pill shape from Stitch Teacher Dashboard */
+  .asymmetric-pill {
+    border-radius: 2rem 0.5rem 2rem 0.5rem;
+  }
+}
