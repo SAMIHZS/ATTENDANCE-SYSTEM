@@ -967,6 +967,114 @@ adminRouter.post('/students/import', async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/v1/admin/students/:id
+ * Hard-delete a student only if no attendance records exist.
+ * Otherwise returns error - admin must archive or soft-delete instead.
+ */
+adminRouter.delete('/students/:id', async (req, res) => {
+  const studentId = req.params.id;
+
+  try {
+    // 1. Check if student has attendance records
+    const { data: attendance, error: attErr } = await supabaseAdmin
+      .from('attendance')
+      .select('id', { count: 'exact', head: true })
+      .eq('student_id', studentId);
+
+    if (attErr) throw attErr;
+
+    if (attendance && attendance.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Cannot delete student with attendance records. Use soft-delete (deactivate) instead.'
+      });
+    }
+
+    // 2. Hard delete allowed
+    const { error: deleteErr } = await supabaseAdmin
+      .from('students')
+      .delete()
+      .eq('id', studentId);
+
+    if (deleteErr) throw deleteErr;
+
+    console.log(`[Admin] Hard-deleted student ${studentId}`);
+    return res.json({ success: true, message: 'Student deleted successfully.' });
+
+  } catch (error: any) {
+    console.error('[Admin] Delete student error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * DELETE /api/v1/admin/teachers/:id
+ * Hard-delete a teacher only if no sessions records exist.
+ * Otherwise returns error - must deactivate instead.
+ */
+adminRouter.delete('/teachers/:id', async (req, res) => {
+  const teacherId = req.params.id;
+
+  try {
+    // 1. Get teacher to find profile_id
+    const { data: teacher, error: findErr } = await supabaseAdmin
+      .from('teachers')
+      .select('profile_id')
+      .eq('id', teacherId)
+      .single();
+
+    if (findErr || !teacher) {
+      return res.status(404).json({ success: false, message: 'Teacher not found' });
+    }
+
+    // 2. Check for references in sessions (scheduled or actual)
+    const { data: sessions, error: sessErr } = await supabaseAdmin
+      .from('sessions')
+      .select('id', { count: 'exact', head: true })
+      .or(`scheduled_teacher_id.eq.${teacherId},actual_teacher_id.eq.${teacherId}`);
+
+    if (sessErr) throw sessErr;
+
+    if (sessions && sessions.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Cannot delete teacher with session records. Use deactivation instead.'
+      });
+    }
+
+    // 3. Check for class_subjects assignments
+    const { data: classSubjects, error: csErr } = await supabaseAdmin
+      .from('class_subjects')
+      .select('id', { count: 'exact', head: true })
+      .eq('teacher_id', teacherId);
+
+    if (csErr) throw csErr;
+
+    if (classSubjects && classSubjects.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Cannot delete teacher assigned to classes. Use deactivation instead.'
+      });
+    }
+
+    // 4. Hard delete allowed
+    const { error: deleteErr } = await supabaseAdmin
+      .from('teachers')
+      .delete()
+      .eq('id', teacherId);
+
+    if (deleteErr) throw deleteErr;
+
+    console.log(`[Admin] Hard-deleted teacher ${teacherId}`);
+    return res.json({ success: true, message: 'Teacher deleted successfully.' });
+
+  } catch (error: any) {
+    console.error('[Admin] Delete teacher error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // -- Class-Subjects Mapper
 adminRouter.get('/class-subjects', async (req, res) => {
   const { classId } = req.query;

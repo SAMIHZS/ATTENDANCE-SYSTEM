@@ -69,6 +69,34 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       profileId: user.id,
     };
 
+    // Check if user is active (students and teachers can be deactivated)
+    if (['student', 'teacher'].includes(profile.role)) {
+      const tableName = profile.role === 'student' ? 'students' : 'teachers';
+      const { data: record, error: recordErr } = await supabaseAdmin
+        .from(tableName)
+        .select('is_active')
+        .eq('profile_id', user.id)
+        .single();
+
+      if (recordErr || !record) {
+        console.warn(`[Middleware] ${profile.role} record not found for user:`, user.email);
+        res.status(403).json({ 
+          success: false, 
+          message: `${profile.role} record not found. Please contact admin.` 
+        });
+        return;
+      }
+
+      if (!record.is_active) {
+        console.warn(`[Middleware] ${profile.role} account is deactivated:`, user.email);
+        res.status(403).json({ 
+          success: false, 
+          message: `Your ${profile.role} account has been deactivated. Please contact admin.` 
+        });
+        return;
+      }
+    }
+
     console.log(`[Middleware] Auth Success. Role: ${req.auth.role}`);
     next();
   } catch (err: any) {
