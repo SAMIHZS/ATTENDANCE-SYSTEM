@@ -2,7 +2,8 @@
 -- Run this in Supabase SQL Editor or as a migration
 
 -- Sessions table indexes
-CREATE INDEX IF NOT EXISTS idx_sessions_teacher_date ON sessions(teacher_id, date);
+CREATE INDEX IF NOT EXISTS idx_sessions_scheduled_teacher_date ON sessions(scheduled_teacher_id, date);
+CREATE INDEX IF NOT EXISTS idx_sessions_actual_teacher_date ON sessions(actual_teacher_id, date);
 CREATE INDEX IF NOT EXISTS idx_sessions_class_date ON sessions(class_id, date);
 CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions(status);
 CREATE INDEX IF NOT EXISTS idx_sessions_date_start_time ON sessions(date, start_time);
