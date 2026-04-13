@@ -9,6 +9,16 @@ export function AdminDashboardPage() {
     staleTime: 60 * 1000 * 5, // 5 minutes
   });
 
+  // Fetch pending teacher requests
+  const { data: teacherRequests } = useQuery({
+    queryKey: ['admin', 'teacher-requests'],
+    queryFn: async () => {
+      const res = await adminApi.getPendingTeacherRequests();
+      return res;
+    },
+    staleTime: 30 * 1000, // 30 seconds, they change frequently
+  });
+
   if (isLoading) {
     return (
       <div className="pt-24 px-6 flex justify-center">
@@ -16,6 +26,8 @@ export function AdminDashboardPage() {
       </div>
     );
   }
+
+  const pendingRequestsCount = teacherRequests?.length || 0;
 
   return (
     <div className="space-y-8 animate-in pb-32">
@@ -30,7 +42,7 @@ export function AdminDashboardPage() {
       </div>
 
       {/* High-Density Metric Grid (Carbon Style) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 border border-outline-subtle bg-surface-low overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-5 border border-outline-subtle bg-surface-low overflow-hidden">
         <div className="p-8 border-r border-outline-subtle flex flex-col justify-between h-40">
           <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold">Total Students</p>
           <div className="flex items-end justify-between">
@@ -55,13 +67,21 @@ export function AdminDashboardPage() {
           </div>
         </div>
 
-        <div className="p-8 flex flex-col justify-between h-40">
+        <div className="p-8 border-r border-outline-subtle flex flex-col justify-between h-40">
           <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold">Today's Sessions</p>
           <div className="flex items-end justify-between">
             <p className="font-headline text-4xl font-bold text-on-surface">{stats?.todaySessions || 0}</p>
             <span className="material-symbols-outlined text-error opacity-40 text-4xl">event_available</span>
           </div>
         </div>
+
+        <Link to="/admin/teacher-requests" className={`p-8 flex flex-col justify-between h-40 ${ pendingRequestsCount > 0 ? 'bg-warning-container/20 border-l-4 border-warning' : '' } hover:bg-surface-container-low transition-colors`}>
+          <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold">Pending Requests</p>
+          <div className="flex items-end justify-between">
+            <p className={`font-headline text-4xl font-bold ${pendingRequestsCount > 0 ? 'text-warning' : 'text-on-surface'}`}>{pendingRequestsCount}</p>
+            <span className="material-symbols-outlined opacity-40 text-4xl">notification_important</span>
+          </div>
+        </Link>
       </div>
 
       <div className="bg-white border border-outline-subtle p-12 flex flex-col items-center justify-center relative overflow-hidden group">

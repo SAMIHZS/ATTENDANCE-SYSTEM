@@ -185,6 +185,23 @@ export const adminApi = {
       responseType: 'blob' 
     });
     downloadBlob(res.data, `session_logs_${params.classId}.csv`);
+  },
+
+  // ─── TEACHER APPROVAL (Part 3+) ─────────────────────────────────────
+
+  getPendingTeacherRequests: async () => {
+    const res = await apiClient.get('/admin/teacher-requests');
+    return res.data.data || [];
+  },
+
+  approveTeacherRequest: async (profileId: string, employeeId?: string) => {
+    const res = await apiClient.post(`/admin/teacher-requests/${profileId}/approve`, { employeeId });
+    return res.data;
+  },
+
+  rejectTeacherRequest: async (profileId: string) => {
+    const res = await apiClient.post(`/admin/teacher-requests/${profileId}/reject`);
+    return res.data;
   }
 };
 

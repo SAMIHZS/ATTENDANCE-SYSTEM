@@ -5,3 +5,4 @@ export { AdminClassesPage } from './AdminClassesPage';
 export { AdminSubjectsPage } from './AdminSubjectsPage';
 export { AdminTimetablePage } from './AdminTimetablePage';
 export { AdminUsersPage } from './AdminUsersPage';
+export { TeacherRequestsPage } from './TeacherRequestsPage';

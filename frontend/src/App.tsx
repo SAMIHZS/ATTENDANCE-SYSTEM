@@ -39,6 +39,7 @@ import {
   AdminAttendancePage,
   AdminClassesPage,
   AdminSubjectsPage,
+  TeacherRequestsPage,
 } from './pages/admin';
 
 export default function App() {
@@ -96,6 +97,7 @@ export default function App() {
             }
           >
             <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/admin/teacher-requests" element={<TeacherRequestsPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/timetable" element={<AdminTimetablePage />} />
             <Route path="/admin/reports" element={<AdminReportsPage />} />
