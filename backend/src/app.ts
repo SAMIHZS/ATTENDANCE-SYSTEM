@@ -35,15 +35,21 @@ app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
-app.use('/api/v1/health',    healthRouter);
-app.use('/api/v1/auth',      authRouter);
-app.use('/api/v1/classes',   classesRouter);
-app.use('/api/v1/subjects',  subjectsRouter);
-app.use('/api/v1/timetable', timetableRouter);
-app.use('/api/v1/sessions',  sessionsRouter);
-app.use('/api/v1/teacher',   teacherRouter);
-app.use('/api/v1/student',   studentRouter);
-app.use('/api/v1/admin',     adminRouter);
+const apiRouter = express.Router();
+
+apiRouter.use('/health',    healthRouter);
+apiRouter.use('/auth',      authRouter);
+apiRouter.use('/classes',   classesRouter);
+apiRouter.use('/subjects',  subjectsRouter);
+apiRouter.use('/timetable', timetableRouter);
+apiRouter.use('/sessions',  sessionsRouter);
+apiRouter.use('/teacher',   teacherRouter);
+apiRouter.use('/student',   studentRouter);
+apiRouter.use('/admin',     adminRouter);
+
+// Support both /api/v1/* and /v1/* (for Vercel rewrites/mounting)
+app.use('/api/v1', apiRouter);
+app.use('/v1', apiRouter);
 
 // ─── 404 ────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

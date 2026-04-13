@@ -1,12 +1,26 @@
 {
+  "version": 2,
+  "public": true,
+  "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "/backend/src/app.ts"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/backend/src/app.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend/$1"
+    }
+  ],
   "experimentalServices": {
     "frontend": {
-      "entrypoint": "frontend",
-      "routePrefix": "/"
+      "entrypoint": "frontend"
     },
     "backend": {
-      "entrypoint": "backend",
-      "routePrefix": "/api"
+      "entrypoint": "backend"
     }
   }
 }
