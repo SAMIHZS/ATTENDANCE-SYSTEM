@@ -195,18 +195,40 @@ async function run() {
     if (extStd) {
       studentId = extStd.id;
     } else {
-      // Create profile first
-      const { data: profData, error: profErr } = await supabaseAdmin
-        .from('profiles')
-        .insert({ full_name: std.name || `Student ${std.regdNo}`, role: 'student' })
-        .select('id')
-        .single();
-        
-      if(profErr) throw profErr;
+      // Create fake auth user so we get a valud UUID for the profile
+      const fakeEmail = `${std.regdNo.toLowerCase()}@student.demo`;
+      
+      const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.createUser({
+        email: fakeEmail,
+        password: 'Student@123',
+        email_confirm: true,
+        user_metadata: { full_name: std.name || `Student ${std.regdNo}`, role: 'student' }
+      });
+
+      let profileId: string;
+      if (authErr) {
+        if (authErr.message === 'User already exists' || authErr.message.includes('already been registered') || (authErr as any).code === 'email_exists') {
+           const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+           const exist = usersData.users.find(u => u.email === fakeEmail);
+           if (!exist) throw new Error('Could not retrieve existing user');
+           profileId = exist.id;
+        } else {
+           throw authErr;
+        }
+      } else {
+        profileId = authData.user.id;
+      }
+
+      // Upsert profile just in case the trigger missed or didn't set role properly
+      await supabaseAdmin.from('profiles').upsert({
+        id: profileId,
+        full_name: std.name || `Student ${std.regdNo}`,
+        role: 'student'
+      });
 
       const { data: studentRow, error: stdErr } = await supabaseAdmin
         .from('students')
-        .insert({ class_id: classId, roll_number: std.regdNo, profile_id: profData.id })
+        .insert({ class_id: classId, roll_number: std.regdNo, profile_id: profileId })
         .select('id')
         .single();
       if (stdErr) throw stdErr;

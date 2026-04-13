@@ -72,12 +72,40 @@ export const adminApi = {
     return res.data.data;
   },
 
-  getTeachers: async () => {
-    const res = await apiClient.get('/admin/teachers');
+  getTeachers: async (params?: { search?: string; showInactive?: boolean }) => {
+    const res = await apiClient.get('/admin/teachers', {
+      params: {
+        search: params?.search || undefined,
+        showInactive: params?.showInactive ? 'true' : undefined
+      }
+    });
     return res.data.data;
   },
-  getStudents: async () => {
-    const res = await apiClient.get('/admin/students');
+  createTeacher: async (body: { fullName: string; email: string; employeeId?: string; initialPassword?: string }) => {
+    const res = await apiClient.post('/admin/teachers', body);
+    return res.data;
+  },
+  updateTeacher: async (id: string, body: { fullName?: string; employeeId?: string; isActive?: boolean }) => {
+    const res = await apiClient.put(`/admin/teachers/${id}`, body);
+    return res.data.data;
+  },
+
+  getStudents: async (params?: { search?: string; classId?: string; showInactive?: boolean }) => {
+    const res = await apiClient.get('/admin/students', {
+      params: {
+        search: params?.search || undefined,
+        classId: params?.classId || undefined,
+        showInactive: params?.showInactive ? 'true' : undefined,
+      }
+    });
+    return res.data.data;
+  },
+  createStudent: async (body: { fullName: string; email?: string; classId: string; rollNumber: string }) => {
+    const res = await apiClient.post('/admin/students', body);
+    return res.data;
+  },
+  updateStudent: async (id: string, body: { fullName?: string; classId?: string; rollNumber?: string; isActive?: boolean }) => {
+    const res = await apiClient.put(`/admin/students/${id}`, body);
     return res.data.data;
   },
 

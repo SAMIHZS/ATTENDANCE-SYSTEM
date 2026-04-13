@@ -1,7 +1,7 @@
 import { useState, useId } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
-import { Role } from '../types';
+import type { Role } from '../types';
 
 export function LoginPage() {
   const { login, register, loginWithGoogle } = useAuth();
@@ -34,14 +34,16 @@ export function LoginPage() {
       if (isRegister) {
         await register({ email, password, full_name: fullName, role: selectedRole });
         setError(null);
-        alert('Registration successful! Please log in.');
+        alert('Registration successful! Please sign in with your new credentials.');
         setIsRegister(false);
       } else {
         await login(email, password, selectedRole);
         navigate(from ?? '/', { replace: true });
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Action failed. Please try again.');
+    } catch (err: any) {
+      console.error('Auth error:', err);
+      const msg = err.response?.data?.message || err.message || 'Action failed. Please try again.';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }

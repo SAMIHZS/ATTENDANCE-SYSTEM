@@ -27,29 +27,31 @@ export function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-surface pb-24 md:pb-0">
-      {/* Top App Bar */}
-      <header className="top-app-bar shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-primary-fixed overflow-hidden flex items-center justify-center font-headline font-bold text-primary-container">
-            {user?.name?.charAt(0).toUpperCase() ?? 'A'}
+    <div className="role-admin min-h-screen bg-background text-on-background pb-24 md:pb-0 font-body">
+      {/* Top App Bar (IBM Carbon Style: Flat, high-contrast, sharp) */}
+      <header className="top-app-bar !border-b-outline h-12">
+        <div className="flex items-center gap-0">
+          <div className="w-12 h-12 flex items-center justify-center bg-primary text-white">
+            <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
           </div>
-          <h1 className="text-xl font-headline font-black text-white tracking-tight">
-            Admin Panel
+          <h1 className="px-4 text-sm font-headline font-bold uppercase tracking-widest border-r border-outline-subtle h-12 flex items-center">
+            System Admin
           </h1>
         </div>
-        <div className="flex items-center gap-6">
-          {/* Desktop inline nav */}
-          <nav className="hidden md:flex gap-8 items-center">
+        <div className="flex items-center gap-0 h-full">
+          {/* Desktop inline nav (Carbon tabs style) */}
+          <nav className="hidden md:flex items-center h-full">
             {DESKTOP_NAV.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.to === '/admin'}
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-tertiary-fixed font-medium font-headline text-sm tracking-wide'
-                    : 'text-slate-400 hover:opacity-80 transition-opacity font-medium font-headline text-sm tracking-wide'
+                  `px-6 h-full flex items-center text-sm font-medium transition-colors border-b-2 ${
+                    isActive
+                      ? 'border-primary bg-surface-low text-primary'
+                      : 'border-transparent text-on-surface-variant hover:bg-surface-low hover:text-on-surface'
+                  }`
                 }
               >
                 {item.label}
@@ -58,34 +60,42 @@ export function AdminLayout() {
           </nav>
           <button
             onClick={handleLogout}
-            className="text-slate-400 hover:text-white transition-colors"
+            className="w-12 h-12 flex items-center justify-center text-on-surface-variant hover:bg-surface-low hover:text-on-surface transition-colors"
             title="Sign out"
           >
-            <span className="material-symbols-outlined">logout</span>
+            <span className="material-symbols-outlined text-[20px]">logout</span>
           </button>
         </div>
       </header>
 
       {/* Page Content */}
-      <main className="pt-16 max-w-7xl mx-auto px-4 md:px-8">
+      <main className="pt-12 max-w-[1600px] mx-auto p-6 md:p-8">
         <Outlet />
       </main>
 
-      {/* Mobile-only Bottom Navigation */}
-      <nav className="md:hidden bottom-nav">
+      {/* Mobile-only Bottom Navigation (Airtable Style: Pill selected states) */}
+      <nav className="md:hidden bottom-nav !h-16">
         {MOBILE_NAV.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to === '/admin'}
             className={({ isActive }) =>
-              isActive
-                ? 'flex flex-col items-center justify-center bg-slate-900 text-white rounded-xl px-4 py-2 transition-all'
-                : 'flex flex-col items-center justify-center text-slate-500 px-4 py-2 hover:bg-slate-100 transition-all active:scale-90'
+              `flex flex-col items-center justify-center flex-1 py-1 transition-all ${
+                isActive
+                  ? 'text-primary'
+                  : 'text-on-surface-variant'
+              }`
             }
           >
-            <span className="material-symbols-outlined">{item.icon}</span>
-            <span className="font-label text-[10px] font-medium tracking-wide">{item.label}</span>
+            <div className={`w-12 h-8 flex items-center justify-center rounded-full transition-colors ${
+              (location.pathname === item.to || (item.to === '/admin' && location.pathname === '/admin')) 
+                ? 'bg-primary/10' 
+                : ''
+            }`}>
+              <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
+            </div>
+            <span className="font-label text-[10px] font-bold mt-1 uppercase tracking-tighter">{item.label}</span>
           </NavLink>
         ))}
       </nav>

@@ -13,13 +13,15 @@ export interface AuthUser {
   name: string;
   email: string;
   role: Role;
+  isBound?: boolean;
 }
 
 export interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, selectedRole?: Role) => Promise<void>;
+  register: (data: any) => Promise<any>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }

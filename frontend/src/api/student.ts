@@ -13,5 +13,11 @@ export const studentApi = {
     
     const { data } = await apiClient.get(`/student/attendance/history?${query.toString()}`);
     return data.data; // [] of flat history records
-  }
+  },
+
+  /** Fetch all classes — uses the shared /classes route (accessible to all authenticated users) */
+  getClasses: async () => {
+    const { data } = await apiClient.get('/classes');
+    return data.data;
+  },
 };

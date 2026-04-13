@@ -22,80 +22,88 @@ export function StudentHistoryPage() {
   const subjects = summaryData?.subjects ?? [];
 
   return (
-    <div className="pt-24 px-6 max-w-2xl mx-auto pb-32">
-      <div className="flex items-center gap-2 mb-6">
-         <button onClick={() => navigate('/student')} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-high text-on-surface-variant active:scale-90 transition-all">
-            <span className="material-symbols-outlined text-lg font-bold">arrow_back</span>
+    <div className="animate-in pb-32">
+      <div className="pt-8 flex items-center gap-4 mb-10">
+         <button onClick={() => navigate('/student')} className="w-8 h-8 flex items-center justify-center rounded-role bg-white/[0.05] border border-white/[0.08] text-on-surface-variant hover:text-on-surface transition-all">
+            <span className="material-symbols-outlined text-[18px]">west</span>
          </button>
-         <h2 className="font-headline font-extrabold text-2xl tracking-tighter text-primary">
-            Attendance History
-         </h2>
+         <div>
+            <h2 className="font-headline font-signature text-xl font-bold tracking-tight text-on-surface">
+               Session History
+            </h2>
+            <div className="h-px w-6 bg-primary opacity-40 mt-1" />
+         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4 mb-6">
-        <input 
-          type="date"
-          value={filterDate}
-          onChange={(e) => setFilterDate(e.target.value)}
-          className="bg-surface-container-low text-on-surface-variant rounded-xl border-none text-sm px-4 py-2 flex-1 outline-none focus:ring-2 focus:ring-secondary"
-        />
-        <select 
-          value={filterSubject}
-          onChange={(e) => setFilterSubject(e.target.value)}
-          className="bg-surface-container-low text-on-surface-variant rounded-xl border-none text-sm px-4 py-2 flex-1 outline-none focus:ring-2 focus:ring-secondary"
-        >
-          <option value="">All Subjects</option>
-          {subjects.map((s: any) => (
-            <option key={s.subject.id} value={s.subject.id}>
-              {s.subject.name}
-            </option>
-          ))}
-        </select>
+      {/* Linear Style Filters */}
+      <div className="flex flex-wrap items-center gap-2 mb-10">
+        <div className="relative flex-1 min-w-[140px]">
+          <input 
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="w-full bg-white/[0.03] border border-white/[0.08] text-xs font-label font-bold uppercase tracking-widest text-on-surface rounded-role px-4 h-10 outline-none focus:border-primary/40 transition-all"
+          />
+        </div>
+        <div className="relative flex-1 min-w-[140px]">
+          <select 
+            value={filterSubject}
+            onChange={(e) => setFilterSubject(e.target.value)}
+            className="w-full bg-white/[0.03] border border-white/[0.08] text-xs font-label font-bold uppercase tracking-widest text-on-surface rounded-role px-4 h-10 outline-none focus:border-primary/40 appearance-none transition-all"
+          >
+            <option value="" className="bg-surface-high">All Subjects</option>
+            {subjects.map((s: any) => (
+              <option key={s.subject.id} value={s.subject.id} className="bg-surface-high">
+                {s.subject.name}
+              </option>
+            ))}
+          </select>
+          <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant opacity-30 pointer-events-none">expand_more</span>
+        </div>
         <button 
           onClick={() => { setFilterDate(''); setFilterSubject(''); }}
-          className="text-on-surface-variant font-label text-xs uppercase font-bold tracking-widest px-4 hover:bg-surface-container rounded-xl transition-colors"
+          className="h-10 px-5 text-[10px] uppercase font-bold tracking-[0.2em] text-on-surface-variant border border-transparent hover:border-white/[0.05] hover:bg-white/[0.02] rounded-role transition-all"
         >
-          Clear
+          Reset
         </button>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-10">
-          <span className="w-8 h-8 border-4 border-secondary/30 border-t-secondary rounded-full animate-spin" />
+        <div className="flex justify-center py-20">
+          <span className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
       ) : (
-        <section className="bg-surface-container-low rounded-[2rem] p-6">
-          <div className="space-y-3">
-            {history.length > 0 ? history.map((record: any) => {
-              const isPresent = record.status === 'present';
-              
-              return (
-                <div key={record.id} className="flex items-center justify-between p-4 bg-surface-container-lowest rounded-2xl">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPresent ? 'bg-secondary/10 text-secondary' : 'bg-error/10 text-error'}`}>
-                      <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        {isPresent ? 'check_circle' : 'cancel'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-body text-sm font-semibold">{record.subject?.name || 'Class Session'}</p>
-                      <p className="font-label text-[10px] text-on-surface-variant">
-                        {new Date(record.date).toLocaleDateString()} &bull; {record.start_time.slice(0, 5)} - {record.end_time.slice(0, 5)}
-                      </p>
-                    </div>
+        <section className="space-y-3">
+          {history.length > 0 ? history.map((record: any) => {
+            const isPresent = record.status === 'present';
+            
+            return (
+              <div key={record.id} className="group relative flex items-center justify-between p-5 bg-white/[0.02] border border-white/[0.05] rounded-role hover:bg-white/[0.04] transition-all">
+                <div className="flex items-center gap-5">
+                  <div className={`w-1 h-8 rounded-full ${isPresent ? 'bg-secondary/40' : 'bg-error/40'}`} />
+                  <div>
+                    <h3 className="font-headline font-signature text-sm font-bold text-on-surface mb-0.5">
+                      {record.subject?.name || 'Academic Session'}
+                    </h3>
+                    <p className="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-40">
+                      {new Date(record.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} &bull; {record.start_time.slice(0, 5)} {record.end_time ? `- ${record.end_time.slice(0, 5)}` : ''}
+                    </p>
                   </div>
-                  <span className={`font-label text-[10px] uppercase font-bold ${isPresent ? 'text-secondary' : 'text-error'}`}>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <span className={`font-label text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${isPresent ? 'text-secondary border-secondary/20 bg-secondary/5' : 'text-error border-error/20 bg-error/5'}`}>
                     {record.status}
                   </span>
                 </div>
-              );
-            }) : (
-              <p className="text-center font-body text-sm text-on-surface-variant py-8">
-                No attendance logs found for the selected criteria.
-              </p>
-            )}
-          </div>
+              </div>
+            );
+          }) : (
+            <div className="text-center py-20 opacity-20">
+              <span className="material-symbols-outlined text-4xl mb-4">history_toggle_off</span>
+              <p className="font-label text-xs uppercase font-bold tracking-widest">Archive Empty</p>
+            </div>
+          )}
         </section>
       )}
     </div>

@@ -18,34 +18,63 @@ declare global {
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const header = req.headers.authorization;
+  console.log(`[Middleware] Auth Check: ${req.method} ${req.path}`);
+
   if (!header?.startsWith('Bearer ')) {
+    console.warn('[Middleware] Missing Authorization header');
     res.status(401).json({ success: false, message: 'Missing authorization token.' });
     return;
   }
 
   const token = header.slice(7);
+  console.log(`[Middleware] Verifying token (len: ${token.length})...`);
 
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-  if (error || !user) {
-    res.status(401).json({ success: false, message: 'Invalid or expired token.' });
-    return;
+  try {
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    
+    if (error) {
+      console.error('[Middleware] Supabase Auth Error:', error.message);
+      res.status(401).json({ success: false, message: `Invalid token: ${error.message}` });
+      return;
+    }
+
+    if (!user) {
+      console.warn('[Middleware] No user returned for token');
+      res.status(401).json({ success: false, message: 'Invalid or expired token.' });
+      return;
+    }
+
+    console.log(`[Middleware] User authenticated: ${user.email} (${user.id})`);
+
+    // Fetch role from profiles (source of truth)
+    const { data: profile, error: profileErr } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileErr || !profile) {
+      console.error('[Middleware] Profile missing for user:', user.email);
+       res.status(403).json({ 
+        success: false, 
+        message: 'Account level access denied: Profile not found. Please contact admin.' 
+      });
+      return;
+    }
+
+    req.auth = {
+      sub: user.id,
+      email: user.email ?? '',
+      role: profile.role as UserRole,
+      profileId: user.id,
+    };
+
+    console.log(`[Middleware] Auth Success. Role: ${req.auth.role}`);
+    next();
+  } catch (err: any) {
+    console.error('[Middleware] Unexpected Auth Error:', err.message);
+    res.status(500).json({ success: false, message: 'Internal auth error.' });
   }
-
-  // Fetch role from profiles (source of truth)
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  req.auth = {
-    sub: user.id,
-    email: user.email ?? '',
-    role: (profile?.role ?? 'student') as UserRole,
-    profileId: user.id,
-  };
-
-  next();
 }
 
 /**

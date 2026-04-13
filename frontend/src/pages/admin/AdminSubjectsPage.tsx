@@ -28,57 +28,62 @@ export function AdminSubjectsPage() {
   });
 
   return (
-    <div className="pt-8 max-w-5xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-headline text-3xl font-extrabold text-on-surface">Subjects</h2>
-          <p className="text-on-surface-variant mt-2 max-w-2xl">
-            Manage course subjects and codes.
-          </p>
+    <div className="space-y-8 animate-in pb-32">
+      {/* Carbon Style Header */}
+      <div className="border-b border-outline-subtle pb-6">
+        <h2 className="font-headline text-2xl font-bold text-on-surface tracking-tight uppercase">
+          Subject Catalog
+        </h2>
+        <p className="text-on-surface-variant text-sm mt-1 uppercase tracking-[0.2em] font-bold opacity-60">
+          Manage academic courses and identifiers
+        </p>
+      </div>
+
+      {/* Carbon Style Input Group */}
+      <div className="flex flex-wrap items-center gap-0 bg-surface-low border border-outline-subtle">
+        <div className="flex-[2] min-w-[200px] relative border-r border-outline-subtle">
+          <span className="material-symbols-outlined text-on-surface-variant/40 absolute left-4 top-1/2 -translate-y-1/2 text-lg">book</span>
+          <input
+            type="text"
+            value={newSubject.name}
+            onChange={(e) => setNewSubject({ ...newSubject, name: e.target.value })}
+            placeholder="Subject name (e.g. Data Structures)..."
+            className="w-full h-11 pl-12 pr-4 bg-transparent font-body text-sm outline-none transition-all placeholder:text-on-surface-variant/40"
+          />
         </div>
+        <div className="flex-1 min-w-[150px] relative border-r border-outline-subtle border-l-0">
+          <span className="material-symbols-outlined text-on-surface-variant/40 absolute left-4 top-1/2 -translate-y-1/2 text-lg">code</span>
+              <input 
+                  value={newSubject.code}
+                  onChange={(e) => setNewSubject({ ...newSubject, code: e.target.value })}
+                  placeholder="Code (e.g. CS101)"
+            className="w-full h-11 pl-12 pr-4 bg-transparent font-body text-sm outline-none transition-all placeholder:text-on-surface-variant/40"
+              />
+        </div>
+        <button
+          onClick={() => { if(newSubject.name) createMutation.mutate() }}
+          disabled={!newSubject.name || createMutation.isPending}
+          className="flex items-center gap-3 bg-primary text-white h-11 px-8 font-label text-xs font-bold uppercase tracking-widest hover:bg-primary-hover disabled:opacity-50 transition-colors"
+        >
+          <span>Catalog Subject</span>
+          <span className="material-symbols-outlined text-lg">add</span>
+        </button>
       </div>
 
-      <div className="bg-surface-container-low rounded-3xl p-6 shadow-sm border border-outline-variant/30 flex gap-4 items-end">
-         <div className="flex-[2]">
-             <label className="block text-sm font-medium text-on-surface-variant mb-1">Subject Name</label>
-             <input 
-                 value={newSubject.name}
-                 onChange={(e) => setNewSubject({ ...newSubject, name: e.target.value })}
-                 className="w-full bg-surface border border-outline-variant rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                 placeholder="e.g. Artificial Intelligence"
-             />
-         </div>
-         <div className="flex-1">
-             <label className="block text-sm font-medium text-on-surface-variant mb-1">Code (Optional)</label>
-             <input 
-                 value={newSubject.code}
-                 onChange={(e) => setNewSubject({ ...newSubject, code: e.target.value })}
-                 className="w-full bg-surface border border-outline-variant rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                 placeholder="e.g. CS101"
-             />
-         </div>
-         <Button 
-            onClick={() => { if(newSubject.name) createMutation.mutate() }}
-            disabled={!newSubject.name || createMutation.isPending}
-            variant="primary"
-         >
-             Add Subject
-         </Button>
-      </div>
-
-      <div className="bg-surface-container-low rounded-3xl overflow-hidden shadow-sm border border-outline-variant/30">
+      {/* Carbon DataTable Style */}
+      <div className="bg-white border border-outline-subtle overflow-hidden">
         <table className="w-full text-left border-collapse">
-            <thead>
-                <tr className="bg-surface-container-highest border-b border-outline-variant/50">
-                    <th className="p-4 font-headline text-sm font-bold text-on-surface-variant uppercase tracking-wider">Subject Name</th>
-                    <th className="p-4 font-headline text-sm font-bold text-on-surface-variant uppercase tracking-wider">Course Code</th>
-                    <th className="p-4 font-headline text-sm font-bold text-on-surface-variant uppercase tracking-wider w-32 border-l border-outline-variant/30 text-center">Actions</th>
+            <thead className="bg-surface-low border-b border-outline-subtle">
+                <tr>
+                    <th className="p-4 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface">Course Nomenclature</th>
+                    <th className="p-4 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface">Academic Identifier</th>
+                    <th className="p-4 font-label text-[10px] font-bold uppercase tracking-widest text-on-surface text-right">Settings</th>
                 </tr>
             </thead>
-            <tbody>
-                {isLoading && <tr><td colSpan={3} className="p-4 text-center text-on-surface-variant">Loading...</td></tr>}
+            <tbody className="divide-y divide-outline-subtle">
+                {isLoading && <tr><td colSpan={3} className="p-12 text-center text-on-surface-variant font-mono text-xs uppercase tracking-tighter opacity-50">Syncing catalog...</td></tr>}
                 {subjects?.map((s: any) => (
-                    <tr key={s.id} className="border-b border-outline-variant/20 last:border-0 hover:bg-surface-container/50 transition-colors">
+                    <tr key={s.id} className="hover:bg-surface-low transition-colors group">
                         <td className="p-4">
                            <input 
                               defaultValue={s.name}
@@ -87,7 +92,7 @@ export function AdminSubjectsPage() {
                                       updateMutation.mutate({ ...s, name: e.target.value });
                                   }
                               }}
-                              className="w-full bg-transparent border-0 focus:ring-2 focus:ring-primary/20 rounded p-1"
+                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-primary/40 rounded-none p-1 font-headline text-sm font-bold text-on-surface outline-none"
                            />
                         </td>
                         <td className="p-4">
@@ -98,11 +103,19 @@ export function AdminSubjectsPage() {
                                       updateMutation.mutate({ ...s, code: e.target.value });
                                   }
                               }}
-                              className="w-full bg-transparent border-0 focus:ring-2 focus:ring-primary/20 rounded p-1 font-mono text-sm"
+                              placeholder="NO CODE"
+                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-primary/40 rounded-none p-1 font-mono text-xs text-on-surface-variant outline-none"
                            />
                         </td>
-                        <td className="p-4 border-l border-outline-variant/30 text-center">
-                            <span className="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer text-lg">edit</span>
+                        <td className="p-4 text-right">
+                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-surface-high transition-colors">
+                                    <span className="material-symbols-outlined text-[18px]">edit_square</span>
+                                </button>
+                                <button className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-error/5 hover:text-error transition-colors">
+                                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 ))}

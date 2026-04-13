@@ -1,8 +1,73 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:ital,wght@0,100..900;1,100..900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─── Variables ─── */
+:root {
+  /* Default: Base Clean Light (Airtable-adjacent) */
+  --theme-primary: #1b61c9;
+  --theme-primary-hover: #1652ab;
+  --theme-on-primary: #ffffff;
+  --theme-secondary: #006a61;
+  --theme-on-secondary: #ffffff;
+  --theme-tertiary: #181d26;
+  --theme-background: #ffffff;
+  --theme-on-background: #181d26;
+  --theme-surface: #ffffff;
+  --theme-surface-low: #f8fafc;
+  --theme-surface-elevated: #ffffff;
+  --theme-on-surface: #181d26;
+  --theme-on-surface-variant: rgba(4, 14, 32, 0.69);
+  --theme-outline: #e0e2e6;
+  --theme-outline-subtle: #f1f3f5;
+  --theme-radius: 12px;
+  --theme-radius-lg: 24px;
+  --theme-shadow: 0 1px 3px rgba(45, 127, 249, 0.2), 0 4px 24px rgba(25, 28, 30, 0.04);
+}
+
+.dark, .role-teacher, .role-student {
+  /* Linear Style (Dark) */
+  --theme-primary: #5e6ad2;
+  --theme-primary-hover: #7170ff;
+  --theme-on-primary: #ffffff;
+  --theme-secondary: #27a644;
+  --theme-on-secondary: #ffffff;
+  --theme-tertiary: #5e6ad2;
+  --theme-background: #08090a;
+  --theme-on-background: #f7f8f8;
+  --theme-surface: #0f1011;
+  --theme-surface-low: #08090a;
+  --theme-surface-elevated: #191a1b;
+  --theme-on-surface: #f7f8f8;
+  --theme-on-surface-variant: #8a8f98;
+  --theme-outline: rgba(255, 255, 255, 0.08); /* 0.08 is Linear standard */
+  --theme-outline-subtle: rgba(255, 255, 255, 0.04);
+  --theme-radius: 6px;
+  --theme-radius-lg: 8px;
+  --theme-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.role-admin {
+  /* IBM + Airtable Style (Enterprise Light) */
+  --theme-primary: #0f62fe; /* IBM Blue 60 */
+  --theme-primary-hover: #0353e9;
+  --theme-on-primary: #ffffff;
+  --theme-tertiary: #161616;
+  --theme-background: #ffffff;
+  --theme-on-background: #161616;
+  --theme-surface: #ffffff;
+  --theme-surface-low: #f4f4f4; /* Gray 10 */
+  --theme-surface-elevated: #ffffff;
+  --theme-on-surface: #161616;
+  --theme-on-surface-variant: #525252; /* Gray 70 */
+  --theme-outline: #c6c6c6; /* Gray 30 */
+  --theme-outline-subtle: #e0e0e0;
+  --theme-radius: 0px; /* IBM is sharp */
+  --theme-radius-lg: 0px;
+  --theme-shadow: none; /* IBM uses layering, not shadows */
+}
 
 /* ─── Material Symbols ─── */
 .material-symbols-outlined {
@@ -17,15 +82,27 @@
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv01", "ss03", "cv11";
+  }
+
+  /* Role-specific font overrides */
+  .role-admin {
+    font-family: 'IBM Plex Sans', sans-serif;
   }
 
   body {
-    @apply bg-surface text-on-surface;
+    @apply bg-background text-on-background transition-colors duration-300;
     min-height: 100dvh;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Manrope', sans-serif;
+    @apply tracking-tightest;
+  }
+
+  .role-teacher h1, .role-teacher h2, .role-teacher h3,
+  .role-student h1, .role-student h2, .role-student h3 {
+     @apply font-signature;
   }
 
   * {
@@ -36,43 +113,61 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Thin styled scrollbar for desktop admin */
+  /* Thin styled scrollbar */
   ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: #f7f9fb; }
-  ::-webkit-scrollbar-thumb { background: #d8dadc; border-radius: 10px; }
+  ::-webkit-scrollbar-track { background: var(--theme-background); }
+  ::-webkit-scrollbar-thumb { 
+    background: var(--theme-outline); 
+    border-radius: 10px; 
+  }
 }
 
 /* ─── Component Utilities ─── */
 @layer components {
-  /* Frosted glass top bar (used on all screens) */
+  /* Frosted glass top bar */
   .top-app-bar {
-    @apply fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16;
-    background: rgba(19, 27, 46, 0.8);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    @apply fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 border-b border-outline-subtle;
+    background: var(--theme-surface-low);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
-  /* Frosted glass bottom nav */
+  /* Linear variant of top bar */
+  .role-teacher .top-app-bar, .role-student .top-app-bar {
+    background: rgba(8, 9, 10, 0.8);
+    @apply border-b border-white/[0.05];
+  }
+
+  /* Bottom Navigation */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 rounded-t-3xl;
-    background: rgba(255, 255, 255, 0.85);
+    @apply fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 border-t border-outline-subtle;
+    background: var(--theme-surface);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 -4px 24px rgba(25, 28, 30, 0.04);
   }
 
-  /* Editorial card shadow */
-  .shadow-editorial {
-    box-shadow: 0 4px 24px rgba(25, 28, 30, 0.04);
+  .role-teacher .bottom-nav, .role-student .bottom-nav {
+    background: rgba(15, 16, 17, 0.8);
+    @apply border-t border-white/[0.05];
   }
 
-  /* Active scale for touch */
   .tap-target {
     @apply active:scale-95 transition-transform duration-150;
   }
 
-  /* Asymmetric pill shape from Stitch Teacher Dashboard */
-  .asymmetric-pill {
-    border-radius: 2rem 0.5rem 2rem 0.5rem;
+  .form-input {
+    @apply w-full h-12 px-4 bg-surface rounded-role border border-outline text-on-surface;
+    @apply focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all;
+    @apply font-body text-sm;
   }
 }
+
+/* ─── Animations ─── */
+@keyframes fadeInZoom {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-in {
+  animation: fadeInZoom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+

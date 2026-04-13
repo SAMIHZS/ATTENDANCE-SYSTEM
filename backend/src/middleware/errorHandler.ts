@@ -12,7 +12,10 @@ export function errorHandler(
   _next: NextFunction
 ) {
   const statusCode = err.statusCode ?? 500;
-  const message = err.isOperational ? err.message : 'Internal server error';
+  // Show the actual error message for operational errors OR any error with a specific statusCode.
+  // Only hide messages for truly unexpected 500s without a statusCode set.
+  const isKnownError = err.isOperational || (err.statusCode !== undefined && err.statusCode < 500);
+  const message = isKnownError ? err.message : 'Internal server error';
 
   if (process.env.NODE_ENV !== 'production') {
     console.error('[error]', err);

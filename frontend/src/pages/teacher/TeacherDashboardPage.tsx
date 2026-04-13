@@ -66,132 +66,137 @@ export function TeacherDashboardPage() {
   }
 
   return (
-    <div className="pt-24 px-6 max-w-4xl mx-auto pb-24">
+    <div className="pt-24 px-4 max-w-xl mx-auto pb-24 animate-in">
       {/* Hero Section: Current Live Class */}
-      <section className="mb-10">
-        <div className="flex items-center justify-between mb-4 pl-2">
-          <h2 className="font-headline font-extrabold text-2xl tracking-tighter text-primary">
-            Current Live Class
+      <section className="mb-12">
+        <div className="flex items-center justify-between mb-6 px-1">
+          <h2 className="font-headline font-signature text-xl tracking-tightest text-on-surface">
+            Live Session
           </h2>
           {liveClass?.slot && (
-            <span className="flex items-center gap-1 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-widest">
-              <span className="w-1.5 h-1.5 bg-on-tertiary-fixed rounded-full"></span> Live
-            </span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary/10 border border-secondary/20">
+              <span className="w-1.5 h-1.5 bg-secondary rounded-full animate-pulse"></span>
+              <span className="text-secondary text-[10px] font-bold uppercase tracking-widest">Active</span>
+            </div>
           )}
         </div>
 
         {liveClass?.slot ? (
-          <div className="relative overflow-hidden rounded-3xl bg-primary-container p-8 shadow-2xl">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary opacity-20 blur-[60px] -mr-16 -mt-16"></div>
+          <div className="relative overflow-hidden rounded-role bg-surface-elevated border border-outline border-white/[0.03] p-8 shadow-2xl shadow-black/40">
+            {/* Luminous glow effect like Linear */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] -mr-32 -mt-32"></div>
             
-            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div className="space-y-2">
-                <div className="inline-block px-3 py-1 bg-white/10 rounded-lg text-white/60 font-label text-xs tracking-wide">
-                  Section: {liveClass.slot.class.name}
+            <div className="relative z-10 flex flex-col gap-8">
+              <div className="space-y-3">
+                <div className="inline-flex px-2 py-0.5 bg-white/[0.05] border border-white/[0.08] rounded-md text-on-surface-variant font-label text-[10px] uppercase tracking-widest">
+                  {liveClass.slot.class.name}
                 </div>
-                <h3 className="text-white font-headline text-3xl font-black leading-tight">
+                <h3 className="text-on-surface font-headline text-3xl font-signature leading-tight tracking-tightest">
                   {liveClass.slot.subject.name}
                 </h3>
-                <div className="flex items-center gap-2 text-white/70">
-                  <span className="material-symbols-outlined text-sm">schedule</span>
-                  <span className="font-label text-sm tracking-tight">
-                    {liveClass.slot.start_time.slice(0, 5)} - {liveClass.slot.end_time.slice(0, 5)}
+                <div className="flex items-center gap-2.5 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-[16px]">schedule</span>
+                  <span className="font-label text-sm tracking-tight font-medium">
+                    {liveClass.slot.start_time.slice(0, 5)} — {liveClass.slot.end_time.slice(0, 5)}
                   </span>
                 </div>
               </div>
 
-              {liveClass.existing_session && (liveClass.existing_session.status === 'submitted' || liveClass.existing_session.status === 'edited') ? (
-                <div className="group w-full md:w-auto h-14 px-8 bg-surface-container/20 text-white font-headline font-bold rounded-2xl flex items-center justify-center gap-3">
-                  <span className="material-symbols-outlined">check_circle</span>
-                  <span>Submitted</span>
+              <div className="flex items-center justify-between pt-6 border-t border-white/[0.05]">
+                <div className="flex flex-col">
+                  <span className="text-on-surface-variant text-[10px] uppercase tracking-widest font-bold opacity-60">Status</span>
+                  <span className="text-on-surface font-headline text-sm font-bold mt-0.5">
+                    {(liveClass.existing_session?.status === 'submitted' || liveClass.existing_session?.status === 'edited') ? 'Complete' : liveClass.existing_session ? 'In Progress' : 'Awaiting Start'}
+                  </span>
                 </div>
-              ) : liveClass.existing_session ? (
-                <button
-                  onClick={() => handleResumeAttendance(liveClass.existing_session.id)}
-                  className="group w-full md:w-auto h-14 px-8 bg-primary text-white border border-secondary font-headline font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg"
-                >
-                  <span>Resume Roll Call</span>
-                  <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                </button>
-              ) : (
-                <button
-                  onClick={handleStartAttendance}
-                  className="group w-full md:w-auto h-14 px-8 bg-secondary hover:bg-secondary-fixed text-white font-headline font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg"
-                >
-                  <span>Start Attendance</span>
-                  <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                </button>
-              )}
-            </div>
 
-            {/* Subtle Data Overlay matching Stitch */}
-            <div className="mt-8 pt-6 border-t border-white/5 flex gap-8">
-              <div className="flex flex-col">
-                <span className="text-white/40 text-[10px] uppercase tracking-widest font-bold">Status</span>
-                <span className="text-white font-headline text-xl font-bold">
-                  {(liveClass.existing_session?.status === 'submitted' || liveClass.existing_session?.status === 'edited') ? 'Complete' : liveClass.existing_session ? 'In Progress' : 'Pending'}
-                </span>
+                {liveClass.existing_session && (liveClass.existing_session.status === 'submitted' || liveClass.existing_session.status === 'edited') ? (
+                  <div className="h-11 px-6 bg-white/[0.03] border border-white/[0.08] text-on-surface-variant font-headline font-bold rounded-role flex items-center gap-2 text-sm italic">
+                    <span className="material-symbols-outlined text-[18px]">done_all</span>
+                    <span>Class Logged</span>
+                  </div>
+                ) : liveClass.existing_session ? (
+                  <button
+                    onClick={() => handleResumeAttendance(liveClass.existing_session.id)}
+                    className="h-11 px-8 bg-primary hover:bg-primary-hover text-white font-headline font-bold rounded-role flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/20 text-sm"
+                  >
+                    <span>Resume Session</span>
+                    <span className="material-symbols-outlined text-[18px]">arrow_right_alt</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleStartAttendance}
+                    className="h-11 px-8 bg-primary hover:bg-primary-hover text-white font-headline font-bold rounded-role flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/20 text-sm"
+                  >
+                    <span>Start Roll Call</span>
+                    <span className="material-symbols-outlined text-[18px]">arrow_right_alt</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
         ) : (
-          <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-8 text-center editorial-shadow">
-            <span className="material-symbols-outlined text-4xl text-outline mb-3">coffee</span>
-            <h3 className="font-headline font-bold text-lg text-primary">No Live Class</h3>
-            <p className="text-sm text-on-surface-variant font-body">
-              You do not have a class scheduled at this time.
+          <div className="bg-surface border border-outline border-white/[0.03] rounded-role py-12 px-6 text-center shadow-lg shadow-black/20">
+            <span className="material-symbols-outlined text-3xl text-on-surface-variant/30 mb-4 block">nightlight</span>
+            <h3 className="font-headline font-bold text-base text-on-surface">No Active Class</h3>
+            <p className="text-sm text-on-surface-variant font-body mt-1 max-w-[240px] mx-auto opacity-70">
+              Your next scheduled class will appear here automatically.
             </p>
           </div>
         )}
       </section>
 
-      {/* Upcoming Classes Section */}
+      {/* Upcoming Section (Linear Minimal List) */}
       <section className="mb-12">
-        <div className="flex items-center justify-between mb-6 pl-2">
-          <h2 className="font-headline font-bold text-xl tracking-tight text-primary">Upcoming Classes</h2>
-          <button className="text-secondary font-label font-semibold text-sm">View All</button>
+        <div className="flex items-center justify-between mb-4 px-1">
+          <h2 className="font-headline font-signature text-sm font-bold text-on-surface-variant uppercase tracking-widest">Today's Schedule</h2>
+          <button onClick={() => navigate('/teacher/history')} className="text-primary font-label font-bold text-[11px] uppercase tracking-widest hover:underline">View History</button>
         </div>
         
-        <div className="space-y-4">
+        <div className="rounded-role border border-outline border-white/[0.03] overflow-hidden bg-surface-elevated/50">
           {upcomingClasses.length > 0 ? upcomingClasses.map((item: any) => (
-            <div key={item.id} className="group flex items-center justify-between p-5 bg-surface-container-lowest rounded-2xl editorial-shadow hover:bg-surface-container-low transition-colors">
+            <div key={item.id} className="group flex items-center justify-between p-4 border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] cursor-pointer transition-colors" onClick={() => {}}>
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-surface-container-high rounded-xl flex items-center justify-center text-primary-container">
-                  <span className="material-symbols-outlined font-bold">book</span>
+                <div className="w-9 h-9 border border-white/[0.05] bg-white/[0.02] rounded-role flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+                  <span className="material-symbols-outlined text-[20px]">bookmark</span>
                 </div>
                 <div>
-                  <h4 className="font-headline font-bold text-on-surface">{item.subject.name}</h4>
-                  <div className="flex items-center gap-2 text-on-surface-variant font-label text-xs">
-                    <span>{item.class.name}</span>
-                    <span className="w-1 h-1 rounded-full bg-outline-variant"></span>
-                    <span>{item.start_time.slice(0, 5)}</span>
+                  <h4 className="font-body font-bold text-sm text-on-surface leading-snug">{item.subject.name}</h4>
+                  <div className="flex items-center gap-2 text-on-surface-variant font-label text-[11px] mt-0.5">
+                    <span className="font-bold">{item.class.name}</span>
+                    <span className="opacity-30">/</span>
+                    <span>{item.start_time.slice(0, 5)} — {item.end_time.slice(0, 5)}</span>
                   </div>
                 </div>
               </div>
-              <span className="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+              <span className="material-symbols-outlined text-on-surface-variant/20 group-hover:text-on-surface-variant transition-colors">chevron_right</span>
             </div>
           )) : (
-            <p className="text-center text-on-surface-variant text-sm py-4">No upcoming classes today.</p>
+            <p className="text-center text-on-surface-variant text-xs py-8 opacity-50">No remaining classes for today.</p>
           )}
         </div>
       </section>
 
-      {/* Quick Insight Stats */}
-      <section className="grid grid-cols-2 gap-4 mb-8">
-        <div className="bg-secondary-container p-6 rounded-[2.5rem] flex flex-col justify-between aspect-square">
-          <span className="material-symbols-outlined text-3xl text-on-secondary-container">person_check</span>
+      {/* Quick Insight Stats (Linear Grid) */}
+      <section className="grid grid-cols-2 gap-4">
+        <div className="bg-surface-elevated border border-outline border-white/[0.03] p-6 rounded-role flex flex-col justify-between aspect-[16/9] md:aspect-video">
+          <div className="flex items-center gap-2 text-secondary">
+             <span className="material-symbols-outlined text-[18px]">verified_user</span>
+             <span className="text-[10px] uppercase font-bold tracking-widest">Attendance</span>
+          </div>
           <div>
-            <span className="font-headline text-3xl font-black text-on-secondary-container">{totalPresent}</span>
-            <p className="text-on-secondary-container/80 text-xs font-bold uppercase tracking-widest mt-1">Total Marked</p>
+            <span className="font-headline text-3xl font-signature text-on-surface">{totalPresent}</span>
+            <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest mt-1 opacity-60">Students Marked</p>
           </div>
         </div>
-        <div className="bg-surface-container-highest p-6 rounded-3xl flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <span className="material-symbols-outlined text-primary">trending_up</span>
+        <div className="bg-surface-elevated border border-outline border-white/[0.03] p-6 rounded-role flex flex-col justify-between aspect-[16/9] md:aspect-video">
+          <div className="flex items-center gap-2 text-primary">
+             <span className="material-symbols-outlined text-[18px]">analytics</span>
+             <span className="text-[10px] uppercase font-bold tracking-widest">Engagement</span>
           </div>
           <div>
-            <span className="font-headline text-2xl font-black text-primary">{weeklyAvg}%</span>
-            <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest mt-1">Weekly Avg</p>
+            <span className="font-headline text-3xl font-signature text-on-surface">{weeklyAvg}%</span>
+            <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest mt-1 opacity-60">Weekly Average</p>
           </div>
         </div>
       </section>

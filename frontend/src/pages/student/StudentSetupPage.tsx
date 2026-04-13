@@ -1,22 +1,17 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { adminApi } from '../../api/admin';
+import { studentApi } from '../../api/student';
 import { apiClient } from '../../api/client';
 import { Button } from '../../components/ui';
-import { useAuth } from '../../auth/AuthProvider';
 
 export function StudentSetupPage() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  
   const [rollNumber, setRollNumber] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const { data: classes, isLoading: classesLoading } = useQuery({
+  const { data: classes } = useQuery({
     queryKey: ['classes'],
-    queryFn: adminApi.getClasses
+    queryFn: studentApi.getClasses
   });
 
   const bindMutation = useMutation({

@@ -7,7 +7,7 @@ import { teacherApi } from '../../api/teacher';
 
 type LocalMark = {
   student_id: string;
-  status: 'present' | 'absent' | 'other';
+  status: 'present' | 'absent';
 };
 
 export function TeacherRollCallPage() {
@@ -65,7 +65,7 @@ export function TeacherRollCallPage() {
     }
   };
 
-  const handleMark = (status: 'present' | 'absent' | 'other') => {
+  const handleMark = (status: 'present' | 'absent') => {
     if (!currentStudent) return;
     
     // Optimistic UI updates
@@ -79,10 +79,8 @@ export function TeacherRollCallPage() {
       setCurrentIndex((i) => i + 1);
     }
 
-    // Sync to server in background for just this one mark (or we could debounce)
-    if (status !== 'other') { // Only support present/absent on backend right now
-      markMutation.mutate([{ student_id: currentStudent.id, status }]);
-    }
+    // Sync to server in background
+    markMutation.mutate([{ student_id: currentStudent.id, status }]);
   };
 
   const handleMarkAllToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,113 +117,118 @@ export function TeacherRollCallPage() {
   }
 
   return (
-    <div className="bg-surface font-body text-on-surface overflow-x-hidden pt-24 min-h-screen">
-      <main className="px-6 pt-2 pb-32 max-w-md mx-auto relative">
-        {/* Contextual Header */}
-        <section className="mb-8 pl-2">
-          <div className="flex items-center gap-2 mb-4">
-             <button onClick={() => navigate(-1)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-high text-on-surface-variant active:scale-90 transition-all">
-                <span className="material-symbols-outlined text-lg font-bold">arrow_back</span>
+    <div className="font-body text-on-surface pt-24 min-h-screen animate-in">
+      <main className="px-4 pt-2 pb-32 max-w-lg mx-auto relative">
+        {/* Contextual Header (Linear Style) */}
+        <section className="mb-10 px-1">
+          <div className="flex items-center gap-3 mb-6">
+             <button onClick={() => navigate(-1)} className="w-8 h-8 flex items-center justify-center rounded-role bg-white/[0.05] border border-white/[0.08] text-on-surface active:scale-95 transition-all">
+                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
              </button>
-             <span className="text-[10px] font-black tracking-widest text-on-surface-variant uppercase">Course Details</span>
+             <div className="flex flex-col">
+               <span className="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase opacity-60">Session In Progress</span>
+               <h2 className="font-headline text-lg font-signature text-on-surface leading-tight">
+                {session.class?.name || 'Class'} <span className="mx-1 text-white/20">—</span> <span className="text-primary">{session.actual_subject?.name || 'Subject'}</span>
+               </h2>
+             </div>
           </div>
-          <div className="flex justify-between items-end mb-2">
-            <div>
-              <p className="font-label text-xs uppercase tracking-widest text-on-surface-variant font-semibold">
-                Current Session
-              </p>
-              <h2 className="font-headline text-3xl font-extrabold tracking-tight text-primary mt-1">
-                {session.class?.name || 'Class'}
-              </h2>
-              <p className="font-body text-secondary font-medium italic">
-                {session.actual_subject?.name || 'Subject'}
-              </p>
+
+          <div className="flex justify-between items-center p-4 bg-white/[0.02] border border-white/[0.05] rounded-role">
+            <div className="flex flex-col">
+              <span className="font-label text-[10px] text-on-surface-variant font-bold uppercase tracking-widest opacity-60">Completion</span>
+              <span className="text-on-surface font-headline text-sm font-bold">
+                {markedCount} / {students.length} <span className="text-[10px] text-on-surface-variant ml-1 font-medium opacity-50">Students</span>
+              </span>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <span className="font-label text-[10px] font-bold text-on-surface-variant">MARK ALL PRESENT</span>
-                <div className="relative inline-flex items-center">
-                  <input type="checkbox" className="sr-only peer" checked={markAll} onChange={handleMarkAllToggle} />
-                  <div className="w-10 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
-                </div>
-              </label>
-            </div>
+            
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <span className="font-label text-[10px] font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">MARK ALL PRESENT</span>
+              <div className="relative inline-flex items-center">
+                <input type="checkbox" className="sr-only peer" checked={markAll} onChange={handleMarkAllToggle} />
+                <div className="w-9 h-5 bg-white/[0.05] border border-white/[0.1] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white/40 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary/40 peer-checked:border-secondary/40 peer-checked:after:bg-secondary"></div>
+              </div>
+            </label>
           </div>
         </section>
 
         {currentStudent ? (
           <>
-            {/* Focused Student Card */}
-            <div className="relative">
-              {/* Background Decoration Layer for depth */}
-              <div className="absolute inset-0 translate-y-4 translate-x-2 bg-primary-container/5 rounded-[2rem] -z-10"></div>
+            {/* Focused Student Card (Linear Style: High-definition cards, soft focus) */}
+            <div className="relative group/card">
+              <div className="absolute inset-x-4 inset-y-0 -translate-y-2 bg-primary/5 blur-2xl rounded-full opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
               
-              <section className="bg-surface-container-lowest rounded-[2rem] p-8 transition-all active:scale-[0.98] duration-300 editorial-shadow">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-48 h-48 rounded-[1.5rem] overflow-hidden mb-6 bg-surface-container-high ring-8 ring-surface-container-low flex justify-center items-center">
-                    {/* Placeholder image from UI, ideally student.avatar_url */}
-                    <span className="material-symbols-outlined text-border/20 text-6xl">person</span>
+              <section className="relative overflow-hidden bg-surface-elevated rounded-role border border-outline border-white/[0.03] p-8 shadow-2xl shadow-black/40">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 blur-[80px] -mr-24 -mt-24 pointer-events-none"></div>
+
+                <div className="flex flex-col items-center text-center relative z-10">
+                  <div className="w-40 h-40 rounded-role overflow-hidden mb-6 bg-white/[0.02] border border-white/[0.08] flex justify-center items-center shadow-inner">
+                    <span className="material-symbols-outlined text-white/5 text-6xl">person</span>
                   </div>
-                  <span className="font-label text-[11px] font-bold tracking-widest text-secondary-container bg-primary-container px-3 py-1 rounded-full mb-3 uppercase">
-                    Roll Number
-                  </span>
-                  <h3 className="font-headline text-2xl font-bold text-primary mb-1">
-                    {currentStudent.first_name} {currentStudent.last_name}
+                  
+                  <div className="inline-flex px-2 py-0.5 bg-white/[0.05] border border-white/[0.08] rounded-md text-on-surface-variant font-label text-[10px] uppercase tracking-widest mb-3">
+                    Roll: {currentStudent.roll_number || 'N/A'}
+                  </div>
+
+                  <h3 className="font-headline text-2xl font-signature text-on-surface mb-1">
+                    {currentStudent.profile?.full_name || 'Unknown Student'}
                   </h3>
-                  <p className="font-body text-on-surface-variant tracking-wider font-medium">
-                    {currentStudent.roll_number || 'N/A'}
-                  </p>
+                  
+                  {/* Status Indicator */}
+                  <div className="h-6 flex items-center mt-2">
+                    {localMarks[currentStudent.id] ? (
+                      <div className={`flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                        localMarks[currentStudent.id].status === 'present' ? 'bg-secondary/10 text-secondary' : 'bg-error/10 text-error'
+                      }`}>
+                         <span className={`w-1 h-1 rounded-full ${localMarks[currentStudent.id].status === 'present' ? 'bg-secondary' : 'bg-error'}`}></span>
+                         {localMarks[currentStudent.id].status}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">Awaiting Mark</span>
+                    )}
+                  </div>
                 </div>
                 
-                {/* Visual indicator of what is currently logged for this student locally */}
-                {localMarks[currentStudent.id] && (
-                     <div className={`mt-4 text-center font-bold text-sm uppercase ${localMarks[currentStudent.id].status === 'present' ? 'text-secondary' : 'text-error'}`}>
-                         Marked: {localMarks[currentStudent.id].status}
-                     </div>
-                )}
-                
-                {/* Tonal Progress Indicator */}
-                <div className="mt-8 pt-8 border-t border-outline-variant/10 flex justify-between items-center">
-                  <div className="flex flex-col">
-                    <span className="font-label text-[10px] text-on-surface-variant font-bold uppercase">Overall Attendance</span>
-                    <span className="font-headline text-lg font-bold text-primary">
-                      {overallPercentage}% <span className="text-xs font-normal text-on-surface-variant tracking-normal">Session</span>
-                    </span>
-                  </div>
-                  <div className="h-10 w-10 flex items-center justify-center rounded-full bg-secondary-container/20">
-                    <span className="material-symbols-outlined text-secondary">insights</span>
+                {/* Session Progress Bar overlaying bottom */}
+                <div className="mt-8 pt-8 border-t border-white/[0.05] flex justify-between items-center">
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-label text-[10px] text-on-surface-variant font-bold uppercase tracking-widest opacity-60">Session Progress</span>
+                      <span className="text-[10px] font-bold text-on-surface">{overallPercentage}%</span>
+                    </div>
+                    <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden">
+                      <div className="h-full bg-primary transition-all duration-500" style={{ width: `${overallPercentage}%` }}></div>
+                    </div>
                   </div>
                 </div>
               </section>
             </div>
 
-            {/* Interaction Buttons */}
-            <section className="mt-12 grid grid-cols-3 gap-4">
+            {/* Interaction Buttons (Linear Style: High-contrast actions) */}
+            <section className="mt-8 grid grid-cols-2 gap-4">
               <button 
                 disabled={session.status !== 'draft'}
                 onClick={() => handleMark('absent')}
-                className={`flex flex-col items-center justify-center p-6 rounded-[2rem] transition-all active:scale-90 border-2 ${localMarks[currentStudent.id]?.status === 'absent' ? 'bg-error text-white border-error' : 'bg-error-container/10 border-transparent hover:border-error text-error'} ${session.status !== 'draft' ? 'opacity-30 cursor-not-allowed' : ''}`}
+                className={`group h-20 flex flex-col items-center justify-center rounded-role transition-all active:scale-95 border ${
+                  localMarks[currentStudent.id]?.status === 'absent' 
+                    ? 'bg-error text-white border-error shadow-lg shadow-error/20' 
+                    : 'bg-white/[0.02] border-white/[0.05] text-on-surface-variant hover:border-error/40 hover:text-error hover:bg-error/5'
+                } ${session.status !== 'draft' ? 'opacity-30 cursor-not-allowed' : ''}`}
               >
-                <span className="material-symbols-outlined text-4xl">close</span>
-                <span className="font-label text-[10px] font-black uppercase mt-2">Absent</span>
-              </button>
-              
-              <button 
-                disabled={session.status !== 'draft'}
-                onClick={() => handleMark('other')}
-                className={`flex flex-col items-center justify-center p-6 rounded-[2rem] transition-all active:scale-90 border-2 ${localMarks[currentStudent.id]?.status === 'other' ? 'bg-outline text-white border-outline' : 'bg-surface-container-high/50 border-transparent hover:border-outline text-on-surface-variant'} ${session.status !== 'draft' ? 'opacity-30 cursor-not-allowed' : ''}`}
-              >
-                <span className="material-symbols-outlined text-4xl">circle</span>
-                <span className="font-label text-[10px] font-black uppercase mt-2">Other</span>
+                <span className="material-symbols-outlined text-[24px]">close</span>
+                <span className="font-label text-[10px] font-black uppercase tracking-widest mt-1.5">Absent</span>
               </button>
 
               <button 
                 disabled={session.status !== 'draft'}
                 onClick={() => handleMark('present')}
-                className={`flex flex-col items-center justify-center p-6 rounded-[2rem] transition-all active:scale-90 border-2 ${localMarks[currentStudent.id]?.status === 'present' ? 'bg-secondary text-white border-secondary' : 'bg-secondary-container/20 border-transparent hover:border-secondary text-secondary'} ${session.status !== 'draft' ? 'opacity-30 cursor-not-allowed' : ''}`}
+                className={`group h-20 flex flex-col items-center justify-center rounded-role transition-all active:scale-95 border ${
+                  localMarks[currentStudent.id]?.status === 'present' 
+                    ? 'bg-secondary text-white border-secondary shadow-lg shadow-secondary/20' 
+                    : 'bg-white/[0.02] border-white/[0.05] text-on-surface-variant hover:border-secondary/40 hover:text-secondary hover:bg-secondary/5'
+                } ${session.status !== 'draft' ? 'opacity-30 cursor-not-allowed' : ''}`}
               >
-                <span className="material-symbols-outlined text-4xl">check</span>
-                <span className="font-label text-[10px] font-black uppercase mt-2">Present</span>
+                <span className="material-symbols-outlined text-[24px]">check</span>
+                <span className="font-label text-[10px] font-black uppercase tracking-widest mt-1.5">Present</span>
               </button>
             </section>
           </>
@@ -234,58 +237,64 @@ export function TeacherRollCallPage() {
         )}
 
         {/* Horizontal Scroll Bar Navigation */}
+        {/* Horizontal Quick Jump (Linear Style) */}
         {students.length > 0 && (
-            <section className="mt-10 mb-8">
-            <div className="flex items-center justify-between px-2 mb-4">
-                <h4 className="font-label text-[11px] font-black text-primary uppercase">Quick Jump</h4>
-                <span className="font-label text-[10px] text-on-surface-variant">{currentIndex + 1} of {students.length}</span>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-4 px-1 snap-x no-scrollbar">
-                {students.map((s: any, idx: number) => {
-                    const isCurrent = idx === currentIndex;
-                    const hasStatus = localMarks[s.id];
-                    let bgColor = isCurrent ? 'bg-primary' : 'bg-surface-container-low';
-                    let textColor = isCurrent ? 'text-white' : 'text-on-surface-variant';
-                    
-                    // Add subtle indicator if already marked but not current
-                    if (!isCurrent && hasStatus) {
-                        if(hasStatus.status === 'present') { bgColor = 'bg-secondary-container/50'; textColor = 'text-primary' }
-                        else if (hasStatus.status === 'absent') { bgColor = 'bg-error-container/50'; textColor = 'text-primary' }
-                    }
+            <section className="mt-12 mb-8">
+              <div className="flex items-center justify-between px-1 mb-4">
+                  <h4 className="font-label text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60">Quick Jump</h4>
+                  <span className="text-[10px] font-bold text-on-surface-variant">{currentIndex + 1} / {students.length}</span>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-4 px-1 snap-x no-scrollbar">
+                  {students.map((s: any, idx: number) => {
+                      const isCurrent = idx === currentIndex;
+                      const hasStatus = localMarks[s.id];
+                      let dotColor = 'bg-white/10';
+                      let borderColor = 'border-white/[0.05]';
+                      let textColor = 'text-on-surface-variant';
+                      
+                      if (isCurrent) {
+                        borderColor = 'border-primary';
+                        textColor = 'text-on-surface';
+                      }
 
-                    return (
-                        <button 
-                            key={s.id} 
-                            onClick={() => setCurrentIndex(idx)}
-                            className={`snap-center flex-none w-12 h-12 flex items-center justify-center rounded-xl font-headline font-bold transition-colors ${bgColor} ${textColor} ${!isCurrent ? 'hover:bg-surface-container-high' : ''}`}
-                        >
-                            {idx + 1}
-                        </button>
-                    )
-                })}
-            </div>
+                      if (hasStatus) {
+                        dotColor = hasStatus.status === 'present' ? 'bg-secondary' : 'bg-error';
+                      }
+
+                      return (
+                          <button 
+                              key={s.id} 
+                              onClick={() => setCurrentIndex(idx)}
+                              className={`snap-center flex-none w-10 h-10 flex flex-col items-center justify-center rounded-role border transition-all ${borderColor} ${textColor} ${!isCurrent ? 'bg-white/[0.02] hover:bg-white/[0.05]' : 'bg-primary/5'}`}
+                          >
+                              <span className="font-headline text-xs font-bold leading-none">{idx + 1}</span>
+                              <div className={`w-1 h-1 rounded-full mt-1.5 ${dotColor}`}></div>
+                          </button>
+                      )
+                  })}
+              </div>
             </section>
         )}
 
-        {/* Dynamic Submit Button */}
-        <div className="fixed bottom-28 left-0 w-full px-6 z-40 bg-gradient-to-t from-surface pb-4 pt-12">
+        {/* Dynamic Submit Button (Linear Style) */}
+        <div className="fixed bottom-28 left-0 w-full px-6 z-40 bg-gradient-to-t from-background via-background/80 to-transparent pb-6 pt-12">
           {session.status === 'submitted' || session.status === 'edited' ? (
-              <div className="w-full max-w-md mx-auto h-14 bg-surface-container-highest text-on-surface font-headline font-bold flex items-center justify-center gap-3 rounded-full opacity-60">
-                 <span className="material-symbols-outlined">lock</span>
-                 <span>Session Submitted</span>
+              <div className="w-full max-w-lg mx-auto h-12 bg-white/[0.03] border border-white/[0.08] text-on-surface-variant/40 font-headline font-bold flex items-center justify-center gap-3 rounded-role">
+                 <span className="material-symbols-outlined text-[18px]">lock</span>
+                 <span className="text-sm uppercase tracking-widest">Marking Closed</span>
               </div>
           ) : (
             <button 
                 disabled={!isReadyToSubmit || submitMutation.isPending}
                 onClick={confirmSubmit}
-                className={`w-full max-w-md mx-auto h-14 rounded-full font-headline font-bold flex items-center justify-center gap-3 transition-opacity ${isReadyToSubmit ? 'bg-primary-container text-white shadow-lg shadow-primary-container/20 opacity-100 active:scale-[0.98]' : 'bg-primary text-white opacity-40 cursor-not-allowed'}`}
+                className={`w-full max-w-lg mx-auto h-12 rounded-role font-headline font-bold flex items-center justify-center gap-2 transition-all shadow-xl shadow-black/40 ${isReadyToSubmit ? 'bg-primary hover:bg-primary-hover text-white opacity-100 active:scale-[0.98]' : 'bg-white/[0.05] border border-white/[0.05] text-on-surface-variant opacity-40 cursor-not-allowed'}`}
             >
                 {submitMutation.isPending ? (
-                    <span className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
+                    <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
                 ) : (
                     <>
-                        <span>Submit Ledger</span>
-                        <span className="material-symbols-outlined">send</span>
+                        <span className="text-sm uppercase tracking-widest leading-none">Complete Session</span>
+                        <span className="material-symbols-outlined text-[18px]">done_all</span>
                     </>
                 )}
             </button>

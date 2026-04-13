@@ -5,7 +5,12 @@ export const sessionsRepository = {
   async findById(id: string): Promise<Session | null> {
     const { data, error } = await supabaseAdmin
       .from('sessions')
-      .select('*')
+      .select(`
+        *,
+        class:classes(id, name),
+        actual_subject:subjects!sessions_actual_subject_id_fkey(id, name, code),
+        scheduled_subject:subjects!sessions_scheduled_subject_id_fkey(id, name, code)
+      `)
       .eq('id', id)
       .single();
     if (error && error.code !== 'PGRST116') throw error;

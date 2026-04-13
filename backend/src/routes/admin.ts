@@ -347,17 +347,392 @@ adminRouter.put('/subjects/:id', async (req, res) => {
   return res.json({ success: true, data });
 });
 
-// -- Teachers & Students
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── TEACHERS — Full CRUD ───────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/v1/admin/teachers
+ * List all teachers with profile info. Supports search and showInactive filter.
+ */
 adminRouter.get('/teachers', async (req, res) => {
-  const { data, error } = await supabaseAdmin.from('teachers').select('id, employee_id, profile:profiles(full_name, email)');
-  if (error) return res.status(500).json({ success: false, error: error.message });
-  return res.json({ success: true, data });
+  try {
+    const { search, showInactive } = req.query;
+
+    let q = supabaseAdmin
+      .from('teachers')
+      .select('id, profile_id, employee_id, department, is_active, created_at, profile:profiles(id, full_name)')
+      .order('created_at', { ascending: false });
+
+    // By default, hide inactive
+    if (showInactive !== 'true') {
+      q = q.eq('is_active', true);
+    }
+
+    const { data, error } = await q;
+    if (error) throw error;
+
+    // Fetch emails from auth.users for each teacher
+    let enrichedData = data ?? [];
+    if (enrichedData.length > 0) {
+      const profileIds = enrichedData.map((t: any) => t.profile_id).filter(Boolean);
+      // Get auth user emails in bulk
+      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      const emailMap = new Map<string, string>();
+      if (authUsers?.users) {
+        authUsers.users.forEach(u => emailMap.set(u.id, u.email ?? ''));
+      }
+
+      enrichedData = enrichedData.map((t: any) => ({
+        ...t,
+        email: emailMap.get(t.profile_id) ?? ''
+      }));
+    }
+
+    // Client-side search filter (name, email, employee_id)
+    let filtered = enrichedData;
+    if (search) {
+      const s = String(search).toLowerCase();
+      filtered = enrichedData.filter((t: any) =>
+        (t.profile?.full_name ?? '').toLowerCase().includes(s) ||
+        (t.email ?? '').toLowerCase().includes(s) ||
+        (t.employee_id ?? '').toLowerCase().includes(s)
+      );
+    }
+
+    return res.json({ success: true, data: filtered });
+  } catch (error: any) {
+    console.error('[Admin] List teachers error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
 });
 
+/**
+ * POST /api/v1/admin/teachers
+ * Create a new teacher: Supabase Auth user → profile → teachers row.
+ */
+adminRouter.post('/teachers', async (req, res) => {
+  const { fullName, email, employeeId, initialPassword } = req.body;
+
+  if (!fullName || !email) {
+    return res.status(400).json({ success: false, message: 'Full name and email are required.' });
+  }
+
+  try {
+    // 1. Create or find auth user
+    let userId: string;
+    const password = initialPassword || 'Welcome@123'; // Default starter password
+
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: fullName, role: 'teacher' }
+    });
+
+    if (authError) {
+      if (authError.message === 'User already exists') {
+        // Find existing user
+        const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        const existing = authUsers?.users?.find(u => u.email === email);
+        if (!existing) throw new Error('User reported exists but not found.');
+        userId = existing.id;
+      } else {
+        throw authError;
+      }
+    } else {
+      userId = authData.user!.id;
+    }
+
+    // 2. Upsert profile with role='teacher'
+    const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
+      id: userId,
+      full_name: fullName,
+      role: 'teacher'
+    });
+    if (profileError) throw profileError;
+
+    // 3. Upsert teachers row
+    const { data: teacherData, error: teacherError } = await supabaseAdmin
+      .from('teachers')
+      .upsert({
+        profile_id: userId,
+        employee_id: employeeId || null,
+        is_active: true
+      }, { onConflict: 'profile_id' })
+      .select()
+      .single();
+    if (teacherError) throw teacherError;
+
+    console.log(`[Admin] Created teacher: ${email} (${userId})`);
+    return res.status(201).json({
+      success: true,
+      data: teacherData,
+      message: `Teacher "${fullName}" created successfully.`
+    });
+
+  } catch (error: any) {
+    console.error('[Admin] Create teacher error:', error);
+    return res.status(error.status || 500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * PUT /api/v1/admin/teachers/:id
+ * Update a teacher's profile and teacher record.
+ */
+adminRouter.put('/teachers/:id', async (req, res) => {
+  const { fullName, employeeId, isActive } = req.body;
+  const teacherId = req.params.id;
+
+  try {
+    // 1. Get teacher to find profile_id
+    const { data: teacher, error: findErr } = await supabaseAdmin
+      .from('teachers')
+      .select('id, profile_id')
+      .eq('id', teacherId)
+      .single();
+    if (findErr || !teacher) {
+      return res.status(404).json({ success: false, message: 'Teacher not found.' });
+    }
+
+    // 2. Update profile if fullName changed
+    if (fullName !== undefined) {
+      const { error: profileErr } = await supabaseAdmin
+        .from('profiles')
+        .update({ full_name: fullName })
+        .eq('id', teacher.profile_id);
+      if (profileErr) throw profileErr;
+    }
+
+    // 3. Update teachers row
+    const updates: Record<string, any> = {};
+    if (employeeId !== undefined) updates.employee_id = employeeId;
+    if (isActive !== undefined) updates.is_active = isActive;
+
+    if (Object.keys(updates).length > 0) {
+      const { error: teacherErr } = await supabaseAdmin
+        .from('teachers')
+        .update(updates)
+        .eq('id', teacherId);
+      if (teacherErr) throw teacherErr;
+    }
+
+    // 4. Return updated record
+    const { data: updated, error: refetchErr } = await supabaseAdmin
+      .from('teachers')
+      .select('id, profile_id, employee_id, department, is_active, created_at, profile:profiles(id, full_name)')
+      .eq('id', teacherId)
+      .single();
+    if (refetchErr) throw refetchErr;
+
+    return res.json({ success: true, data: updated });
+  } catch (error: any) {
+    console.error('[Admin] Update teacher error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── STUDENTS — Full CRUD ───────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/v1/admin/students
+ * List all students with profile info. Supports search, classId filter, and showInactive.
+ */
 adminRouter.get('/students', async (req, res) => {
-  const { data, error } = await supabaseAdmin.from('students').select('id, roll_number, class:classes(name), profile:profiles(full_name, email)');
-  if (error) return res.status(500).json({ success: false, error: error.message });
-  return res.json({ success: true, data });
+  try {
+    const { search, classId, showInactive } = req.query;
+
+    let q = supabaseAdmin
+      .from('students')
+      .select('id, profile_id, roll_number, class_id, is_active, created_at, class:classes(id, name), profile:profiles(id, full_name)')
+      .order('roll_number', { ascending: true });
+
+    if (classId) q = q.eq('class_id', String(classId));
+    if (showInactive !== 'true') q = q.eq('is_active', true);
+
+    const { data, error } = await q;
+    if (error) throw error;
+
+    // Fetch emails from auth.users
+    let enrichedData = data ?? [];
+    if (enrichedData.length > 0) {
+      const profileIds = enrichedData.map((s: any) => s.profile_id).filter(Boolean);
+      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      const emailMap = new Map<string, string>();
+      if (authUsers?.users) {
+        authUsers.users.forEach(u => emailMap.set(u.id, u.email ?? ''));
+      }
+
+      enrichedData = enrichedData.map((s: any) => ({
+        ...s,
+        email: emailMap.get(s.profile_id) ?? ''
+      }));
+    }
+
+    // Client-side search filter
+    let filtered = enrichedData;
+    if (search) {
+      const s = String(search).toLowerCase();
+      filtered = enrichedData.filter((st: any) =>
+        (st.profile?.full_name ?? '').toLowerCase().includes(s) ||
+        (st.email ?? '').toLowerCase().includes(s) ||
+        (st.roll_number ?? '').toLowerCase().includes(s)
+      );
+    }
+
+    return res.json({ success: true, data: filtered });
+  } catch (error: any) {
+    console.error('[Admin] List students error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/admin/students
+ * Create a new student. If email is provided, creates auth user + profile.
+ * If not, creates student row only (can be bound later via roll-number setup).
+ */
+adminRouter.post('/students', async (req, res) => {
+  const { fullName, email, classId, rollNumber } = req.body;
+
+  if (!fullName || !classId || !rollNumber) {
+    return res.status(400).json({ success: false, message: 'Full name, class, and roll number are required.' });
+  }
+
+  try {
+    let profileId: string | null = null;
+
+    // 1. If email provided, create or find auth user
+    if (email) {
+      const password = 'Student@123'; // Default starter password
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName, role: 'student' }
+      });
+
+      if (authError) {
+        if (authError.message === 'User already exists') {
+          const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+          const existing = authUsers?.users?.find(u => u.email === email);
+          if (!existing) throw new Error('User reported exists but not found.');
+          profileId = existing.id;
+        } else {
+          throw authError;
+        }
+      } else {
+        profileId = authData.user!.id;
+      }
+
+      // 2. Upsert profile with role='student'
+      const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
+        id: profileId,
+        full_name: fullName,
+        role: 'student'
+      });
+      if (profileError) throw profileError;
+    }
+
+    // 3. Insert student row
+    const studentRow: any = {
+      class_id: classId,
+      roll_number: rollNumber,
+      is_active: true
+    };
+    if (profileId) studentRow.profile_id = profileId;
+
+    const { data: studentData, error: studentError } = await supabaseAdmin
+      .from('students')
+      .insert(studentRow)
+      .select()
+      .single();
+
+    if (studentError) {
+      if (studentError.code === '23505') {
+        return res.status(409).json({ success: false, message: 'A student with this roll number already exists in this class.' });
+      }
+      throw studentError;
+    }
+
+    console.log(`[Admin] Created student: ${rollNumber} ${fullName}`);
+    return res.status(201).json({
+      success: true,
+      data: studentData,
+      message: `Student "${fullName}" (${rollNumber}) created successfully.`
+    });
+
+  } catch (error: any) {
+    console.error('[Admin] Create student error:', error);
+    return res.status(error.status || 500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * PUT /api/v1/admin/students/:id
+ * Update a student's profile and student record.
+ */
+adminRouter.put('/students/:id', async (req, res) => {
+  const { fullName, classId, rollNumber, isActive } = req.body;
+  const studentId = req.params.id;
+
+  try {
+    // 1. Get student to find profile_id
+    const { data: student, error: findErr } = await supabaseAdmin
+      .from('students')
+      .select('id, profile_id')
+      .eq('id', studentId)
+      .single();
+    if (findErr || !student) {
+      return res.status(404).json({ success: false, message: 'Student not found.' });
+    }
+
+    // 2. Update profile if fullName changed and student is bound
+    if (fullName !== undefined && student.profile_id) {
+      const { error: profileErr } = await supabaseAdmin
+        .from('profiles')
+        .update({ full_name: fullName })
+        .eq('id', student.profile_id);
+      if (profileErr) throw profileErr;
+    }
+
+    // 3. Update student row
+    const updates: Record<string, any> = {};
+    if (classId !== undefined) updates.class_id = classId;
+    if (rollNumber !== undefined) updates.roll_number = rollNumber;
+    if (isActive !== undefined) updates.is_active = isActive;
+
+    if (Object.keys(updates).length > 0) {
+      const { error: studentErr } = await supabaseAdmin
+        .from('students')
+        .update(updates)
+        .eq('id', studentId);
+
+      if (studentErr) {
+        if (studentErr.code === '23505') {
+          return res.status(409).json({ success: false, message: 'A student with this roll number already exists in the target class.' });
+        }
+        throw studentErr;
+      }
+    }
+
+    // 4. Return updated record
+    const { data: updated, error: refetchErr } = await supabaseAdmin
+      .from('students')
+      .select('id, profile_id, roll_number, class_id, is_active, created_at, class:classes(id, name), profile:profiles(id, full_name)')
+      .eq('id', studentId)
+      .single();
+    if (refetchErr) throw refetchErr;
+
+    return res.json({ success: true, data: updated });
+  } catch (error: any) {
+    console.error('[Admin] Update student error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
 });
 
 // -- Class-Subjects Mapper

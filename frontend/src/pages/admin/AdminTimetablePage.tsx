@@ -9,7 +9,7 @@ export function AdminTimetablePage() {
   
   const { data: classes } = useQuery({ queryKey: ['admin', 'classes'], queryFn: adminApi.getClasses });
   const { data: subjects } = useQuery({ queryKey: ['admin', 'subjects'], queryFn: adminApi.getSubjects });
-  const { data: teachers } = useQuery({ queryKey: ['admin', 'teachers'], queryFn: adminApi.getTeachers });
+  const { data: teachers } = useQuery({ queryKey: ['admin', 'teachers'], queryFn: () => adminApi.getTeachers() });
   
   const { data: timetable, isLoading: isLoadingTt } = useQuery({
     queryKey: ['admin', 'timetable', selectedClass],

@@ -18,67 +18,76 @@ export function AdminDashboardPage() {
   }
 
   return (
-    <div className="pt-24 px-6 max-w-4xl mx-auto pb-32">
-      <h2 className="font-headline font-extrabold text-3xl text-primary mb-8 tracking-tight">
-        Institution Health
-      </h2>
+    <div className="space-y-8 animate-in pb-32">
+      {/* Carbon Style Header */}
+      <div className="border-b border-outline-subtle pb-6">
+        <h2 className="font-headline text-2xl font-bold text-on-surface tracking-tight uppercase">
+          Institutional Overview
+        </h2>
+        <p className="text-on-surface-variant text-sm mt-1 uppercase tracking-[0.2em] font-bold opacity-60">
+          Real-time metrics & system health
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-surface-container-low p-6 rounded-[2rem] flex flex-col items-center justify-center shadow-sm">
-          <span className="material-symbols-outlined text-4xl text-secondary mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>
-            groups
-          </span>
-          <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold mb-1 text-center">Total Students</p>
-          <p className="font-headline text-3xl font-extrabold text-primary">{stats?.totalStudents || 0}</p>
+      {/* High-Density Metric Grid (Carbon Style) */}
+      <div className="grid grid-cols-1 md:grid-cols-4 border border-outline-subtle bg-surface-low overflow-hidden">
+        <div className="p-8 border-r border-outline-subtle flex flex-col justify-between h-40">
+          <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold">Total Students</p>
+          <div className="flex items-end justify-between">
+            <p className="font-headline text-4xl font-bold text-on-surface">{stats?.totalStudents || 0}</p>
+            <span className="material-symbols-outlined text-secondary opacity-40 text-4xl">groups</span>
+          </div>
         </div>
 
-        <div className="bg-surface-container-low p-6 rounded-[2rem] flex flex-col items-center justify-center shadow-sm">
-          <span className="material-symbols-outlined text-4xl text-secondary mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>
-            person
-          </span>
-          <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold mb-1 text-center">Total Teachers</p>
-          <p className="font-headline text-3xl font-extrabold text-primary">{stats?.totalTeachers || 0}</p>
+        <div className="p-8 border-r border-outline-subtle flex flex-col justify-between h-40">
+          <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold">Active Staff</p>
+          <div className="flex items-end justify-between">
+            <p className="font-headline text-4xl font-bold text-on-surface">{stats?.totalTeachers || 0}</p>
+            <span className="material-symbols-outlined text-secondary opacity-40 text-4xl">person</span>
+          </div>
         </div>
 
-        <div className="bg-surface-container-low p-6 rounded-[2rem] flex flex-col items-center justify-center shadow-sm">
-          <span className="material-symbols-outlined text-4xl text-tertiary mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>
-            class
-          </span>
-          <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold mb-1 text-center">Active Classes</p>
-          <p className="font-headline text-3xl font-extrabold text-primary">{stats?.totalClasses || 0}</p>
+        <div className="p-8 border-r border-outline-subtle flex flex-col justify-between h-40">
+          <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold">Registered Classes</p>
+          <div className="flex items-end justify-between">
+            <p className="font-headline text-4xl font-bold text-on-surface">{stats?.totalClasses || 0}</p>
+            <span className="material-symbols-outlined text-primary opacity-40 text-4xl">class</span>
+          </div>
         </div>
 
-        <div className="bg-surface-container-low p-6 rounded-[2rem] flex flex-col items-center justify-center shadow-sm">
-          <span className="material-symbols-outlined text-4xl text-error mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>
-            event_available
-          </span>
-          <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold mb-1 text-center">Today's Sessions</p>
-          <p className="font-headline text-3xl font-extrabold text-primary">{stats?.todaySessions || 0}</p>
+        <div className="p-8 flex flex-col justify-between h-40">
+          <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest font-bold">Today's Sessions</p>
+          <div className="flex items-end justify-between">
+            <p className="font-headline text-4xl font-bold text-on-surface">{stats?.todaySessions || 0}</p>
+            <span className="material-symbols-outlined text-error opacity-40 text-4xl">event_available</span>
+          </div>
         </div>
       </div>
 
-      <div className="bg-surface-container-low p-6 mt-6 rounded-[2rem] flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
-        <span className="material-symbols-outlined text-4xl text-primary mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>
-          monitoring
-        </span>
-        <p className="font-label text-sm text-on-surface-variant uppercase tracking-widest font-bold mb-1">Avg Institutional Attendance</p>
-        <p className="font-headline text-5xl font-extrabold text-primary">{stats?.averageAttendance || 0}%</p>
+      <div className="bg-white border border-outline-subtle p-12 flex flex-col items-center justify-center relative overflow-hidden group">
+        <div className="absolute inset-x-0 bottom-0 h-1.5 bg-primary transform origin-left scale-x-[0.85]" />
+        <p className="font-label text-xs text-on-surface-variant uppercase tracking-[0.3em] font-bold mb-4 opacity-70">Average Institutional Attendance</p>
+        <p className="font-headline text-7xl font-bold text-on-surface leading-none tabular-nums group-hover:text-primary transition-colors cursor-default">
+          {stats?.averageAttendance || 0}<span className="text-4xl text-on-surface-variant font-light">%</span>
+        </p>
       </div>
 
-      <h3 className="font-headline font-bold text-xl text-primary mt-12 mb-6">Quick Links</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <h3 className="font-headline font-bold text-xs uppercase tracking-[0.2em] text-on-surface-variant mt-12 mb-6">Administrative Control Panel</h3>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-0 border-t border-l border-outline-subtle">
         {[
-          { icon: 'class', label: 'Manage Classes', to: '/admin/classes' },
-          { icon: 'book', label: 'Manage Subjects', to: '/admin/subjects' },
-          { icon: 'person_add', label: 'Manage Teachers', to: '/admin/users' },
-          { icon: 'person_add', label: 'Manage Students', to: '/admin/users' },
-          { icon: 'calendar_today', label: 'Timetable Manager', to: '/admin/timetable' },
-          { icon: 'fact_check', label: 'Attendance Explorer', to: '/admin/attendance' },
+          { icon: 'domain', label: 'Batch Directory', description: 'Manage groups, years, and semester schedules.', to: '/admin/classes' },
+          { icon: 'subject', label: 'Subject Catalog', description: 'Register subjects and assign credit systems.', to: '/admin/subjects' },
+          { icon: 'manage_accounts', label: 'Faculty Management', description: 'Modify teacher authentication and roles.', to: '/admin/users' },
+          { icon: 'badge', label: 'Student Nexus', description: 'Provision students and link roll numbers.', to: '/admin/users' },
+          { icon: 'date_range', label: 'Timetable Matrix', description: 'Define session slots and global schedules.', to: '/admin/timetable' },
+          { icon: 'analytics', label: 'Attendance Ledger', description: 'Deep-dive reports and compliance data.', to: '/admin/attendance' },
         ].map((link, idx) => (
-          <Link key={idx} to={link.to} className="bg-surface-container-low hover:bg-surface-container p-4 rounded-2xl flex items-center gap-3 transition-colors">
-             <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>{link.icon}</span>
-             <span className="font-label text-xs uppercase tracking-widest font-bold">{link.label}</span>
+          <Link key={idx} to={link.to} className="bg-white hover:bg-surface-low border-r border-b border-outline-subtle p-8 transition-all group">
+            <div className="flex items-center gap-4 mb-3">
+              <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">{link.icon}</span>
+              <span className="font-headline text-sm font-bold uppercase tracking-widest text-on-surface">{link.label}</span>
+            </div>
+            <p className="text-on-surface-variant text-[11px] leading-relaxed opacity-70 group-hover:opacity-100">{link.description}</p>
           </Link>
         ))}
       </div>

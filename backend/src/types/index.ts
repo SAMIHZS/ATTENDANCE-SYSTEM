@@ -33,6 +33,7 @@ export interface Teacher {
   profile_id: string;
   employee_id: string | null;
   department: string | null;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -41,6 +42,7 @@ export interface Student {
   profile_id: string;
   class_id: string;
   roll_number: string;
+  is_active: boolean;
   created_at: string;
 }
 

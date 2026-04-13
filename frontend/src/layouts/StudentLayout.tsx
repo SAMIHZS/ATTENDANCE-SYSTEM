@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 
 const NAV_ITEMS = [
@@ -18,48 +18,50 @@ export function StudentLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
-      {/* Top App Bar */}
-      <header className="top-app-bar shadow-sm">
+    <div className="role-student min-h-screen bg-background text-on-background pb-24 font-body">
+      {/* Top App Bar (Simplified Linear Style) */}
+      <header className="top-app-bar">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center font-headline font-bold text-primary-container text-sm">
+          <div className="w-8 h-8 rounded-role bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-primary font-bold text-xs">
             {user?.name?.charAt(0).toUpperCase() ?? 'S'}
           </div>
-          <span className="text-white font-headline tracking-tight font-bold text-base">
-            Welcome, {user?.name?.split(' ')[0] ?? 'Student'}
+          <span className="text-on-surface font-headline font-signature text-sm tracking-tight">
+            {user?.name?.split(' ')[0] ?? 'Student'}
           </span>
         </div>
         <div className="flex items-center gap-4">
           <button
             onClick={handleLogout}
-            className="text-slate-400 hover:text-white transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-role bg-white/[0.02] border border-white/[0.05] text-on-surface-variant hover:text-on-surface transition-all"
             title="Sign out"
           >
-            <span className="material-symbols-outlined">logout</span>
+            <span className="material-symbols-outlined text-[18px]">logout</span>
           </button>
         </div>
       </header>
 
       {/* Page Content */}
-      <main className="max-w-2xl mx-auto">
+      <main className="max-w-xl mx-auto px-4">
         <Outlet />
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="bottom-nav">
+      {/* Bottom Navigation (Simplified Linear) */}
+      <nav className="bottom-nav px-6 !pb-6">
         {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to === '/student'}
             className={({ isActive }) =>
-              isActive
-                ? 'flex flex-col items-center justify-center bg-slate-900 text-white rounded-xl px-4 py-2 transition-all'
-                : 'flex flex-col items-center justify-center text-slate-500 px-4 py-2 hover:bg-slate-100 transition-all active:scale-90 duration-200'
+              `flex flex-col items-center justify-center flex-1 py-1 transition-all rounded-role ${
+                isActive
+                  ? 'text-primary'
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-white/[0.02]'
+              }`
             }
           >
-            <span className="material-symbols-outlined mb-1">{item.icon}</span>
-            <span className="font-label text-[10px] font-medium tracking-wide">{item.label}</span>
+            <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+            <span className="font-label text-[10px] font-medium tracking-tighter mt-1">{item.label}</span>
           </NavLink>
         ))}
       </nav>
