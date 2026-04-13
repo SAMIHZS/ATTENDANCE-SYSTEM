@@ -5,13 +5,57 @@ export function StudentDashboardPage() {
   const { data: summary, isLoading } = useQuery({
     queryKey: ['student', 'summary'],
     queryFn: studentApi.getSummary,
+    staleTime: 15 * 60 * 1000, // 15 minutes - attendance summary updates daily
   });
 
   if (isLoading) {
     return (
-      <div className="pt-24 flex justify-center">
-        <span className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
+      <main className="space-y-10 animate-in pb-32">
+        {/* Header Skeleton */}
+        <div className="pt-8 flex flex-col items-center">
+          <div className="h-5 w-32 bg-surface-container-high rounded animate-pulse mb-1" />
+          <div className="h-px w-8 bg-primary/40" />
+        </div>
+
+        {/* Metric Card Skeleton */}
+        <section className="relative">
+          <div className="absolute inset-0 bg-primary/10 rounded-[2rem] blur-2xl animate-pulse" />
+          <div className="relative bg-white/[0.03] border border-white/[0.08] p-10 rounded-[2.5rem] flex flex-col items-center backdrop-blur-sm">
+            <div className="flex items-baseline gap-2 mb-4">
+              <div className="h-24 w-32 bg-surface-container-high rounded animate-pulse" />
+            </div>
+            <div className="h-3 w-24 bg-surface-container-high rounded animate-pulse mb-10" />
+            <div className="flex gap-12 w-full justify-center">
+              <div className="text-center space-y-1">
+                <div className="h-3 w-12 bg-surface-container-high rounded animate-pulse" />
+                <div className="h-6 w-8 bg-surface-container-high rounded animate-pulse mx-auto" />
+              </div>
+              <div className="text-center space-y-1">
+                <div className="h-3 w-10 bg-surface-container-high rounded animate-pulse" />
+                <div className="h-6 w-6 bg-surface-container-high rounded animate-pulse mx-auto" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Subjects Skeleton */}
+        <section>
+          <div className="h-6 w-24 bg-surface-container-high rounded animate-pulse mb-6" />
+          <div className="space-y-4">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="rounded-xl bg-surface-container-lowest p-4 border border-outline-variant/10">
+                <div className="flex justify-between items-center">
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 bg-surface-container-high rounded animate-pulse" />
+                    <div className="h-3 w-20 bg-surface-container-high rounded animate-pulse" />
+                  </div>
+                  <div className="h-6 w-12 bg-surface-container-high rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
     );
   }
 

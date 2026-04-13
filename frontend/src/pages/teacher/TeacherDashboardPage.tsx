@@ -9,16 +9,19 @@ export function TeacherDashboardPage() {
   const { data: liveClassResponse, isLoading: isLoadingLive } = useQuery({
     queryKey: ['teacher', 'live-class'],
     queryFn: teacherApi.getLiveClass,
+    staleTime: 60 * 1000, // 1 minute - live class doesn't change often
   });
 
   const { data: todaySchedule, isLoading: isLoadingSchedule } = useQuery({
     queryKey: ['teacher', 'today-schedule'],
     queryFn: teacherApi.getTodaySchedule,
+    staleTime: 5 * 60 * 1000, // 5 minutes - schedule is static
   });
 
   const { data: historyResponse } = useQuery({
     queryKey: ['teacher', 'history', 1],
     queryFn: () => teacherApi.getHistory(1, 7),
+    staleTime: 10 * 60 * 1000, // 10 minutes - history doesn't change frequently
   });
 
   // Derived
@@ -59,8 +62,46 @@ export function TeacherDashboardPage() {
 
   if (isLoadingLive || isLoadingSchedule) {
     return (
-      <div className="pt-24 px-6 max-w-4xl mx-auto flex justify-center mt-20">
-        <span className="w-8 h-8 border-4 border-secondary/30 border-t-secondary rounded-full animate-spin" />
+      <div className="pt-24 px-4 max-w-xl mx-auto pb-24 animate-in">
+        {/* Skeleton for Live Session */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-6 px-1">
+            <div className="h-5 w-24 bg-surface-container-high rounded animate-pulse" />
+            <div className="w-16 h-6 bg-secondary/20 rounded-full animate-pulse" />
+          </div>
+          <div className="rounded-role bg-surface-container-lowest border border-outline-variant/10 p-8 shadow-2xl">
+            <div className="space-y-3 mb-8">
+              <div className="h-4 w-20 bg-surface-container-high rounded animate-pulse" />
+              <div className="h-8 w-48 bg-surface-container-high rounded animate-pulse" />
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-surface-container-high rounded animate-pulse" />
+                <div className="h-4 w-32 bg-surface-container-high rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="h-10 flex-1 bg-surface-container-high rounded-xl animate-pulse" />
+              <div className="h-10 w-24 bg-surface-container-high rounded-xl animate-pulse" />
+            </div>
+          </div>
+        </section>
+
+        {/* Skeleton for Schedule */}
+        <section className="mb-12">
+          <div className="h-6 w-32 bg-surface-container-high rounded animate-pulse mb-6" />
+          <div className="space-y-4">
+            {[1,2,3].map(i => (
+              <div key={i} className="rounded-xl bg-surface-container-lowest p-4 border border-outline-variant/10">
+                <div className="flex justify-between items-center">
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-surface-container-high rounded animate-pulse" />
+                    <div className="h-3 w-16 bg-surface-container-high rounded animate-pulse" />
+                  </div>
+                  <div className="h-6 w-16 bg-surface-container-high rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }
