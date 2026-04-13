@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════
--- Attendance Ledger — Seed Data for Development & Testing
+-- BCA Student Hub — Seed Data for Development & Testing
 -- Run this AFTER the initial_schema migration.
 -- Safe to run on a clean database (uses INSERT ... ON CONFLICT DO NOTHING)
 -- ═══════════════════════════════════════════════════════════════════

@@ -7,7 +7,7 @@ healthRouter.get('/', (_req, res) => {
     success: true,
     data: {
       status: 'healthy',
-      service: 'Attendance Ledger API',
+      service: 'BCA Student Hub API',
       version: '1.0.0',
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV ?? 'development',

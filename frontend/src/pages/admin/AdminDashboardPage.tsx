@@ -100,7 +100,7 @@ export function AdminDashboardPage() {
           { icon: 'manage_accounts', label: 'Faculty Management', description: 'Modify teacher authentication and roles.', to: '/admin/users?role=teacher' },
           { icon: 'badge', label: 'Student Nexus', description: 'Provision students and link roll numbers.', to: '/admin/users?role=student' },
           { icon: 'date_range', label: 'Timetable Matrix', description: 'Define session slots and global schedules.', to: '/admin/timetable' },
-          { icon: 'analytics', label: 'Attendance Ledger', description: 'Deep-dive reports and compliance data.', to: '/admin/attendance' },
+          { icon: 'analytics', label: 'Attendance Reports', description: 'Deep-dive reports and compliance data.', to: '/admin/attendance' },
         ].map((link, idx) => (
           <Link key={idx} to={link.to} className="bg-white hover:bg-surface-low border-r border-b border-outline-subtle p-8 transition-all group">
             <div className="flex items-center gap-4 mb-3">

@@ -48,7 +48,7 @@ export function AdminAttendancePage() {
       {/* Carbon Style Header */}
       <div className="border-b border-outline-subtle pb-6">
         <h2 className="font-headline text-2xl font-bold text-on-surface tracking-tight uppercase">
-          Attendance Ledger
+          Attendance Report
         </h2>
         <p className="text-on-surface-variant text-sm mt-1 uppercase tracking-[0.2em] font-bold opacity-60">
           Orchestrate session compliance and audit roster integrity

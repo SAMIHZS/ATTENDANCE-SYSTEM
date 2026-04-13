@@ -76,7 +76,7 @@ export function LoginPage() {
             <span className="material-symbols-outlined text-3xl">menu_book</span>
           </div>
           <h1 className="font-headline font-extrabold text-3xl tracking-tight text-on-surface mb-2">
-            Attendance Ledger
+            BCA Student Hub
           </h1>
           <p className="font-body text-on-surface-variant text-sm">Secure Institutional Access</p>
         </header>
