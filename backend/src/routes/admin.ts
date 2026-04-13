@@ -115,14 +115,25 @@ adminRouter.get('/reports', async (req, res) => {
 
 adminRouter.get('/reports/export/class', async (req, res) => {
   try {
-    const { classId, from, to } = req.query;
+    const { classId, from, to, year } = req.query;
     if (!classId) return res.status(400).json({ success: false, error: 'classId is required' });
+
+    // Determine date range
+    let startDate = from as string | null;
+    let endDate = to as string | null;
+
+    if (year && !startDate && !endDate) {
+      // If year provided, use full year range
+      const yearNum = parseInt(year as string);
+      startDate = `${yearNum}-01-01`;
+      endDate = `${yearNum}-12-31`;
+    }
 
     // Fetch stats for ALL students in class (high limit)
     const { data: stats, error } = await supabaseAdmin.rpc('get_admin_attendance_report', {
       p_class_id: classId as string,
-      p_start_date: (from as string) || null,
-      p_end_date: (to as string) || null,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
       p_limit: 10000,
       p_offset: 0
     });
@@ -179,13 +190,23 @@ adminRouter.get('/reports/export/class', async (req, res) => {
 
 adminRouter.get('/reports/export/subject', async (req, res) => {
   try {
-    const { classId, subjectId, from, to } = req.query;
+    const { classId, subjectId, from, to, year } = req.query;
     if (!classId || !subjectId) return res.status(400).json({ success: false, error: 'classId and subjectId are required' });
+
+    // Determine date range
+    let startDate = from as string | null;
+    let endDate = to as string | null;
+
+    if (year && !startDate && !endDate) {
+      const yearNum = parseInt(year as string);
+      startDate = `${yearNum}-01-01`;
+      endDate = `${yearNum}-12-31`;
+    }
 
     const { data: stats, error } = await supabaseAdmin.rpc('get_admin_attendance_report', {
       p_class_id: classId as string,
-      p_start_date: (from as string) || null,
-      p_end_date: (to as string) || null,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
       p_limit: 10000,
       p_offset: 0
     });
@@ -224,13 +245,23 @@ adminRouter.get('/reports/export/subject', async (req, res) => {
 
 adminRouter.get('/reports/export/sessions', async (req, res) => {
   try {
-    const { classId, from, to } = req.query;
+    const { classId, from, to, year } = req.query;
     if (!classId) return res.status(400).json({ success: false, error: 'classId is required' });
+
+    // Determine date range
+    let startDate = from as string | null;
+    let endDate = to as string | null;
+
+    if (year && !startDate && !endDate) {
+      const yearNum = parseInt(year as string);
+      startDate = `${yearNum}-01-01`;
+      endDate = `${yearNum}-12-31`;
+    }
 
     const { data: logs, error } = await supabaseAdmin.rpc('get_session_details_export', {
       p_class_id: classId as string,
-      p_start_date: (from as string) || null,
-      p_end_date: (to as string) || null
+      p_start_date: startDate || null,
+      p_end_date: endDate || null
     });
     if (error) throw error;
 
