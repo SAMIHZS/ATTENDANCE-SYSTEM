@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../../api/admin';
-import { Button } from '../../components/ui';
+import { useToast } from '../../context/ToastContext';
 
 export function AdminSubjectsPage() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [newSubject, setNewSubject] = useState({ name: '', code: '' });
   
   const { data: subjects, isLoading } = useQuery({
@@ -17,14 +18,27 @@ export function AdminSubjectsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'subjects'] });
       setNewSubject({ name: '', code: '' });
-    }
+      showToast('Subject cataloged successfully', 'success');
+    },
+    onError: (err: any) => showToast(err.response?.data?.error || 'Failed to create subject', 'error'),
   });
 
   const updateMutation = useMutation({
     mutationFn: (sub: any) => adminApi.updateSubject(sub.id, sub.name, sub.code),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'subjects'] });
-    }
+      showToast('Subject updated', 'success');
+    },
+    onError: (err: any) => showToast(err.response?.data?.error || 'Failed to update subject', 'error'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: adminApi.deleteSubject,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'subjects'] });
+      showToast('Subject removed from catalog', 'success');
+    },
+    onError: (err: any) => showToast(err.response?.data?.error || 'Failed to delete subject.', 'error')
   });
 
   return (
@@ -65,8 +79,8 @@ export function AdminSubjectsPage() {
           disabled={!newSubject.name || createMutation.isPending}
           className="flex items-center gap-3 bg-primary text-white h-11 px-8 font-label text-xs font-bold uppercase tracking-widest hover:bg-primary-hover disabled:opacity-50 transition-colors"
         >
-          <span>Catalog Subject</span>
-          <span className="material-symbols-outlined text-lg">add</span>
+          <span>{createMutation.isPending ? 'Cataloging...' : 'Catalog Subject'}</span>
+          <span className="material-symbols-outlined text-lg">{createMutation.isPending ? 'sync' : 'add'}</span>
         </button>
       </div>
 
@@ -81,47 +95,81 @@ export function AdminSubjectsPage() {
                 </tr>
             </thead>
             <tbody className="divide-y divide-outline-subtle">
-                {isLoading && <tr><td colSpan={3} className="p-12 text-center text-on-surface-variant font-mono text-xs uppercase tracking-tighter opacity-50">Syncing catalog...</td></tr>}
+                {isLoading && (
+                  <tr>
+                    <td colSpan={3} className="p-12 text-center text-on-surface-variant font-mono text-xs uppercase tracking-tighter opacity-50">
+                       <span className="inline-block animate-spin mr-2">sync</span>
+                       Syncing catalog...
+                    </td>
+                  </tr>
+                )}
                 {subjects?.map((s: any) => (
-                    <tr key={s.id} className="hover:bg-surface-low transition-colors group">
-                        <td className="p-4">
-                           <input 
-                              defaultValue={s.name}
-                              onBlur={(e) => {
-                                  if(e.target.value !== s.name && e.target.value) {
-                                      updateMutation.mutate({ ...s, name: e.target.value });
-                                  }
-                              }}
-                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-primary/40 rounded-none p-1 font-headline text-sm font-bold text-on-surface outline-none"
-                           />
-                        </td>
-                        <td className="p-4">
-                           <input 
-                              defaultValue={s.code || ''}
-                              onBlur={(e) => {
-                                  if(e.target.value !== (s.code || '')) {
-                                      updateMutation.mutate({ ...s, code: e.target.value });
-                                  }
-                              }}
-                              placeholder="NO CODE"
-                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-primary/40 rounded-none p-1 font-mono text-xs text-on-surface-variant outline-none"
-                           />
-                        </td>
-                        <td className="p-4 text-right">
-                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-surface-high transition-colors">
-                                    <span className="material-symbols-outlined text-[18px]">edit_square</span>
-                                </button>
-                                <button className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-error/5 hover:text-error transition-colors">
-                                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                    <SubjectRow 
+                      key={s.id} 
+                      s={s} 
+                      onUpdate={(updates: any) => updateMutation.mutate({ ...s, ...updates })}
+                      onDelete={() => { if(confirm(`Archive ${s.name}?`)) deleteMutation.mutate(s.id); }}
+                      isUpdating={updateMutation.isPending && updateMutation.variables?.id === s.id}
+                      isDeleting={deleteMutation.isPending && deleteMutation.variables === s.id}
+                    />
                 ))}
             </tbody>
         </table>
       </div>
     </div>
   );
+}
+
+function SubjectRow({ s, onUpdate, onDelete, isUpdating, isDeleting }: any) {
+    const [name, setName] = useState(s.name);
+    const [code, setCode] = useState(s.code || '');
+
+    return (
+        <tr className={`hover:bg-surface-low transition-colors group ${isDeleting ? 'opacity-30 pointer-events-none' : ''}`}>
+            <td className="p-4 relative">
+               <input 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={(e) => {
+                      if(e.target.value !== s.name && e.target.value) {
+                          onUpdate({ name: e.target.value });
+                      }
+                  }}
+                  className={`w-full bg-transparent border-0 focus:ring-1 focus:ring-primary/40 rounded-none p-1 font-headline text-sm font-bold text-on-surface outline-none ${isUpdating ? 'opacity-50' : ''}`}
+               />
+               {isUpdating && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-primary animate-pulse font-bold uppercase">Sync</span>}
+            </td>
+            <td className="p-4">
+               <input 
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  onBlur={(e) => {
+                      if(e.target.value !== (s.code || '')) {
+                          onUpdate({ code: e.target.value });
+                      }
+                  }}
+                  placeholder="NO CODE"
+                  className="w-full bg-transparent border-0 focus:ring-1 focus:ring-primary/40 rounded-none p-1 font-mono text-xs text-on-surface-variant outline-none"
+               />
+            </td>
+            <td className="p-4 text-right">
+                <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                        onClick={() => onUpdate({ name, code })}
+                        className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-surface-high transition-colors"
+                        title="Force Update"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">save</span>
+                    </button>
+                    <button 
+                        onClick={onDelete}
+                        className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-error/5 hover:text-error transition-colors"
+                        title="Archive Course"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    );
 }

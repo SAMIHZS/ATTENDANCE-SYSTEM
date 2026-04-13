@@ -77,8 +77,8 @@ export function AdminDashboardPage() {
         {[
           { icon: 'domain', label: 'Batch Directory', description: 'Manage groups, years, and semester schedules.', to: '/admin/classes' },
           { icon: 'subject', label: 'Subject Catalog', description: 'Register subjects and assign credit systems.', to: '/admin/subjects' },
-          { icon: 'manage_accounts', label: 'Faculty Management', description: 'Modify teacher authentication and roles.', to: '/admin/users' },
-          { icon: 'badge', label: 'Student Nexus', description: 'Provision students and link roll numbers.', to: '/admin/users' },
+          { icon: 'manage_accounts', label: 'Faculty Management', description: 'Modify teacher authentication and roles.', to: '/admin/users?role=teacher' },
+          { icon: 'badge', label: 'Student Nexus', description: 'Provision students and link roll numbers.', to: '/admin/users?role=student' },
           { icon: 'date_range', label: 'Timetable Matrix', description: 'Define session slots and global schedules.', to: '/admin/timetable' },
           { icon: 'analytics', label: 'Attendance Ledger', description: 'Deep-dive reports and compliance data.', to: '/admin/attendance' },
         ].map((link, idx) => (

@@ -59,7 +59,7 @@ export function StudentDashboardPage() {
       <section>
         <div className="flex justify-between items-center mb-6 pl-2">
           <h2 className="font-headline font-signature text-sm font-bold uppercase tracking-widest text-on-surface-variant">Course Metrics</h2>
-          <span className="font-label text-[10px] text-primary font-bold uppercase tracking-[0.2em] bg-primary/5 px-3 py-1 rounded-full">S4 ACTV</span>
+          <span className="font-label text-[10px] text-primary font-bold uppercase tracking-[0.2em] bg-primary/5 px-3 py-1 rounded-full">{summary?.className || 'ACTIVE'}</span>
         </div>
         
         <div className="space-y-4">

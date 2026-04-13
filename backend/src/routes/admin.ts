@@ -320,6 +320,12 @@ adminRouter.put('/classes/:id', async (req, res) => {
   return res.json({ success: true, data });
 });
 
+adminRouter.delete('/classes/:id', async (req, res) => {
+  const { error } = await supabaseAdmin.from('classes').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ success: false, error: error.message });
+  return res.json({ success: true, message: 'Class deleted successfully' });
+});
+
 adminRouter.get('/subjects', async (req, res) => {
   const { data, error } = await supabaseAdmin.from('subjects').select('id, name, code').order('name');
   if (error) return res.status(500).json({ success: false, error: error.message });
@@ -345,6 +351,12 @@ adminRouter.put('/subjects/:id', async (req, res) => {
   const { data, error } = await supabaseAdmin.from('subjects').update({ name, code }).eq('id', req.params.id).select().single();
   if (error) return res.status(500).json({ success: false, error: error.message });
   return res.json({ success: true, data });
+});
+
+adminRouter.delete('/subjects/:id', async (req, res) => {
+  const { error } = await supabaseAdmin.from('subjects').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ success: false, error: error.message });
+  return res.json({ success: true, message: 'Subject deleted successfully' });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

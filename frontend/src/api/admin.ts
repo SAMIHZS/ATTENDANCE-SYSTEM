@@ -58,6 +58,10 @@ export const adminApi = {
     const res = await apiClient.put(`/admin/classes/${id}`, { name });
     return res.data.data;
   },
+  deleteClass: async (id: string) => {
+    const res = await apiClient.delete(`/admin/classes/${id}`);
+    return res.data;
+  },
 
   getSubjects: async () => {
     const res = await apiClient.get('/admin/subjects');
@@ -70,6 +74,10 @@ export const adminApi = {
   updateSubject: async (id: string, name: string, code?: string) => {
     const res = await apiClient.put(`/admin/subjects/${id}`, { name, code });
     return res.data.data;
+  },
+  deleteSubject: async (id: string) => {
+    const res = await apiClient.delete(`/admin/subjects/${id}`);
+    return res.data;
   },
 
   getTeachers: async (params?: { search?: string; showInactive?: boolean }) => {
@@ -141,9 +149,11 @@ export const adminApi = {
     return res.data;
   },
 
-  getAttendanceSessions: async (classId?: string) => {
-    const params = classId ? `?classId=${classId}` : '';
-    const res = await apiClient.get(`/admin/attendance/sessions${params}`);
+  getAttendanceSessions: async (classId?: string, date?: string) => {
+    const params = new URLSearchParams();
+    if (classId) params.append('classId', classId);
+    if (date) params.append('date', date);
+    const res = await apiClient.get(`/admin/attendance/sessions?${params.toString()}`);
     return res.data.data;
   },
   getAttendanceSessionLogs: async (sessionId: string) => {

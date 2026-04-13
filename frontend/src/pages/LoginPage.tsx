@@ -1,6 +1,7 @@
 import { useState, useId } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
+import { ParticleCanvas } from '../components/ui/particle-canvas-1';
 import type { Role } from '../types';
 
 export function LoginPage() {
@@ -61,14 +62,15 @@ export function LoginPage() {
   };
 
   return (
-    <>
-      {/* Background Elements */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden>
-        <div className="absolute top-0 right-0 w-1/2 h-2/3 bg-primary-container opacity-5" style={{ clipPath: 'polygon(0% 0%, 100% 0%, 100% 85%, 0% 100%)' }} />
-        <div className="absolute bottom-0 left-0 w-full h-1/3 bg-surface-container-low" />
+    <div className="min-h-screen w-full relative overflow-hidden flex flex-col items-center justify-center bg-white">
+      {/* Dynamic Background Layer */}
+      <div className="fixed inset-0 z-0 bg-white">
+        <ParticleCanvas maxParticles={800} speedScale={1.5} />
+        {/* Subtle gradient overlay for premium feel and text safety on light bg */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-white via-transparent to-primary/10 pointer-events-none" />
       </div>
 
-      <main className="relative z-10 w-full max-w-md mx-auto px-4 py-12">
+      <main className="relative z-10 w-full max-w-md px-4 py-12">
         <header className="mb-10 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-white mb-6 shadow-xl">
             <span className="material-symbols-outlined text-3xl">menu_book</span>
@@ -226,6 +228,6 @@ export function LoginPage() {
             </p>
         </footer>
       </main>
-    </>
+    </div>
   );
 }

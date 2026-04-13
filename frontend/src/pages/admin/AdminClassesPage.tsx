@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../../api/admin';
-import { Button } from '../../components/ui';
+import { useToast } from '../../context/ToastContext';
 
 export function AdminClassesPage() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [newClassName, setNewClassName] = useState('');
   
   const { data: classes, isLoading } = useQuery({
@@ -17,14 +18,27 @@ export function AdminClassesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'classes'] });
       setNewClassName('');
-    }
+      showToast('Batch created successfully', 'success');
+    },
+    onError: (err: any) => showToast(err.response?.data?.error || 'Failed to create batch', 'error'),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, name }: { id: string, name: string }) => adminApi.updateClass(id, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'classes'] });
-    }
+      showToast('Batch updated', 'success');
+    },
+    onError: (err: any) => showToast(err.response?.data?.error || 'Failed to update batch', 'error'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: adminApi.deleteClass,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'classes'] });
+      showToast('Batch deleted permanently', 'success');
+    },
+    onError: (err: any) => showToast(err.response?.data?.error || 'Failed to delete class. Ensure it has no students first.', 'error')
   });
 
   return (
@@ -56,8 +70,8 @@ export function AdminClassesPage() {
           disabled={!newClassName || createMutation.isPending}
           className="flex items-center gap-3 bg-primary text-white h-11 px-8 font-label text-xs font-bold uppercase tracking-widest hover:bg-primary-hover disabled:opacity-50 transition-colors"
         >
-          <span>Provision Batch</span>
-          <span className="material-symbols-outlined text-lg">add</span>
+          <span>{createMutation.isPending ? 'Provisioning...' : 'Provision Batch'}</span>
+          <span className="material-symbols-outlined text-lg">{createMutation.isPending ? 'sync' : 'add'}</span>
         </button>
       </div>
 
@@ -71,35 +85,70 @@ export function AdminClassesPage() {
                 </tr>
             </thead>
             <tbody className="divide-y divide-outline-subtle">
-                {isLoading && <tr><td colSpan={2} className="p-12 text-center text-on-surface-variant font-mono text-xs uppercase tracking-tighter opacity-50">Synchronizing registry...</td></tr>}
+                {isLoading && (
+                  <tr>
+                    <td colSpan={2} className="p-12 text-center text-on-surface-variant font-mono text-xs uppercase tracking-tighter opacity-50">
+                       <span className="inline-block animate-spin mr-2">sync</span>
+                       Synchronizing registry...
+                    </td>
+                  </tr>
+                )}
                 {classes?.map((c: any) => (
-                    <tr key={c.id} className="hover:bg-surface-low transition-colors group">
-                        <td className="p-4">
-                           <input 
-                              defaultValue={c.name}
-                              onBlur={(e) => {
-                                  if(e.target.value !== c.name && e.target.value) {
-                                      updateMutation.mutate({ id: c.id, name: e.target.value });
-                                  }
-                              }}
-                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-primary/40 rounded-none p-1 font-headline text-sm font-bold text-on-surface outline-none"
-                           />
-                        </td>
-                        <td className="p-4 text-right">
-                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-surface-high transition-colors">
-                                    <span className="material-symbols-outlined text-[18px]">edit_note</span>
-                                </button>
-                                <button className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-error/5 hover:text-error transition-colors">
-                                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                    <ClassRow 
+                      key={c.id} 
+                      c={c} 
+                      onUpdate={(name: string) => updateMutation.mutate({ id: c.id, name })}
+                      onDelete={() => { if(confirm(`Archive ${c.name}?`)) deleteMutation.mutate(c.id); }}
+                      isUpdating={updateMutation.isPending && updateMutation.variables?.id === c.id}
+                      isDeleting={deleteMutation.isPending && deleteMutation.variables === c.id}
+                    />
                 ))}
             </tbody>
         </table>
       </div>
     </div>
   );
+}
+
+/**
+ * Extracted Row Component for performance and localized state
+ */
+function ClassRow({ c, onUpdate, onDelete, isUpdating, isDeleting }: any) {
+    const [val, setVal] = useState(c.name);
+
+    return (
+        <tr className={`hover:bg-surface-low transition-colors group ${isDeleting ? 'opacity-30 pointer-events-none' : ''}`}>
+            <td className="p-4 relative">
+               <input 
+                  value={val}
+                  onChange={(e) => setVal(e.target.value)}
+                  onBlur={(e) => {
+                      if(e.target.value !== c.name && e.target.value) {
+                          onUpdate(e.target.value);
+                      }
+                  }}
+                  className={`w-full bg-transparent border-0 focus:ring-1 focus:ring-primary/40 rounded-none p-1 font-headline text-sm font-bold text-on-surface outline-none transition-all ${isUpdating ? 'opacity-50' : ''}`}
+               />
+               {isUpdating && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-primary font-bold uppercase animate-pulse">Saving</span>}
+            </td>
+            <td className="p-4 text-right">
+                <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                        onClick={() => onUpdate(val)}
+                        className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-surface-high transition-colors"
+                        title="Force Save"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">save</span>
+                    </button>
+                    <button 
+                        onClick={onDelete}
+                        className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-error/5 hover:text-error transition-colors"
+                        title="Archive Batch"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    );
 }

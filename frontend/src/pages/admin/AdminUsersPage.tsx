@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/admin';
+import { useDebounce } from '../../hooks/useDebounce';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
-
 type Tab = 'teachers' | 'students';
 
 interface TeacherRow {
@@ -30,9 +31,22 @@ interface StudentRow {
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 export function AdminUsersPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('teachers');
+  const [searchParams] = useSearchParams();
+  const initialRole = searchParams.get('role');
+  
+  const [activeTab, setActiveTab] = useState<Tab>(
+    initialRole === 'student' ? 'students' : 'teachers'
+  );
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [showInactive, setShowInactive] = useState(false);
+
+  // Sync tab if URL param changes after initial load
+  useEffect(() => {
+    const role = searchParams.get('role');
+    if (role === 'student') setActiveTab('students');
+    if (role === 'teacher') setActiveTab('teachers');
+  }, [searchParams]);
 
   return (
     <div className="space-y-8 animate-in pb-32">
@@ -90,9 +104,9 @@ export function AdminUsersPage() {
 
       {/* Tab Content */}
       {activeTab === 'teachers' ? (
-        <TeachersTab search={search} showInactive={showInactive} />
+        <TeachersTab search={debouncedSearch} showInactive={showInactive} />
       ) : (
-        <StudentsTab search={search} showInactive={showInactive} />
+        <StudentsTab search={debouncedSearch} showInactive={showInactive} />
       )}
     </div>
   );
@@ -170,7 +184,8 @@ function TeachersTab({ search, showInactive }: { search: string; showInactive: b
                   <div className="flex gap-0 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => setEditingId(t.id)}
-                      className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-surface-high hover:text-primary transition-colors"
+                      disabled={toggleActiveMutation.isPending}
+                      className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-surface-high hover:text-primary transition-colors disabled:opacity-30"
                       title="Edit Profile"
                     >
                       <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -178,14 +193,18 @@ function TeachersTab({ search, showInactive }: { search: string; showInactive: b
                     <button
                       onClick={() => toggleActiveMutation.mutate({ id: t.id, isActive: !t.is_active })}
                       disabled={toggleActiveMutation.isPending}
-                      className={`h-9 w-9 flex items-center justify-center transition-colors ${
+                      className={`h-9 w-9 flex items-center justify-center transition-colors disabled:opacity-50 ${
                         t.is_active 
                           ? 'text-on-surface-variant hover:bg-error/5 hover:text-error' 
                           : 'text-on-surface-variant hover:bg-secondary/5 hover:text-secondary'
                       }`}
                       title={t.is_active ? 'Deactivate Account' : 'Reactive Account'}
                     >
-                      <span className="material-symbols-outlined text-[18px]">{t.is_active ? 'person_off' : 'person_check'}</span>
+                      {toggleActiveMutation.isPending && toggleActiveMutation.variables?.id === t.id ? (
+                        <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      ) : (
+                        <span className="material-symbols-outlined text-[18px]">{t.is_active ? 'person_off' : 'person_check'}</span>
+                      )}
                     </button>
                   </div>
                 </td>
@@ -319,7 +338,8 @@ function StudentsTab({ search, showInactive }: { search: string; showInactive: b
                   <div className="flex gap-0 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => setEditingId(s.id)}
-                      className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-surface-high hover:text-primary transition-colors"
+                      disabled={toggleActiveMutation.isPending}
+                      className="h-9 w-9 flex items-center justify-center text-on-surface-variant hover:bg-surface-high hover:text-primary transition-colors disabled:opacity-30"
                       title="Update Record"
                     >
                       <span className="material-symbols-outlined text-[18px]">contact_page</span>
@@ -327,14 +347,18 @@ function StudentsTab({ search, showInactive }: { search: string; showInactive: b
                     <button
                       onClick={() => toggleActiveMutation.mutate({ id: s.id, isActive: !s.is_active })}
                       disabled={toggleActiveMutation.isPending}
-                      className={`h-9 w-9 flex items-center justify-center transition-colors ${
+                      className={`h-9 w-9 flex items-center justify-center transition-colors disabled:opacity-50 ${
                         s.is_active 
                           ? 'text-on-surface-variant hover:bg-error/5 hover:text-error' 
                           : 'text-on-surface-variant hover:bg-secondary/5 hover:text-secondary'
                       }`}
                       title={s.is_active ? 'Suspend Access' : 'Restore Access'}
                     >
-                      <span className="material-symbols-outlined text-[18px]">{s.is_active ? 'block' : 'undo'}</span>
+                      {toggleActiveMutation.isPending && toggleActiveMutation.variables?.id === s.id ? (
+                        <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      ) : (
+                        <span className="material-symbols-outlined text-[18px]">{s.is_active ? 'block' : 'undo'}</span>
+                      )}
                     </button>
                   </div>
                 </td>

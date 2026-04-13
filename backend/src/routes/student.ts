@@ -58,10 +58,10 @@ studentRouter.get('/attendance/summary', async (req: Request, res: Response, nex
   try {
     const profileId = req.auth!.profileId;
 
-    // 1. Resolve student ID
+    // 1. Resolve student ID and class name
     const { data: student, error: stdErr } = await supabaseAdmin
       .from('students')
-      .select('id, class_id')
+      .select('id, class_id, class:classes(name)')
       .eq('profile_id', profileId)
       .single();
 
@@ -126,6 +126,7 @@ studentRouter.get('/attendance/summary', async (req: Request, res: Response, nex
     res.json({
       success: true,
       data: {
+        className: (student as any).class?.name || 'Unknown',
         overall: {
           percentage: overallPercentage,
           total: totalClasses,

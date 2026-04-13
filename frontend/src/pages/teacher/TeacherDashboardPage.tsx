@@ -150,7 +150,10 @@ export function TeacherDashboardPage() {
       <section className="mb-12">
         <div className="flex items-center justify-between mb-4 px-1">
           <h2 className="font-headline font-signature text-sm font-bold text-on-surface-variant uppercase tracking-widest">Today's Schedule</h2>
-          <button onClick={() => navigate('/teacher/history')} className="text-primary font-label font-bold text-[11px] uppercase tracking-widest hover:underline">View History</button>
+          <div className="flex gap-4">
+            <button onClick={() => navigate('/teacher/timetable')} className="text-secondary font-label font-bold text-[11px] uppercase tracking-widest hover:underline">Full Timetable</button>
+            <button onClick={() => navigate('/teacher/history')} className="text-primary font-label font-bold text-[11px] uppercase tracking-widest hover:underline">View History</button>
+          </div>
         </div>
         
         <div className="rounded-role border border-outline border-white/[0.03] overflow-hidden bg-surface-elevated/50">
