@@ -360,6 +360,129 @@ adminRouter.delete('/subjects/:id', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// ─── TEACHER APPROVAL ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/v1/admin/teacher-requests
+ * Lists all pending teacher approval requests.
+ */
+adminRouter.get('/teacher-requests', async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name, role, requested_teacher_at')
+      .eq('role', 'teacher_pending')
+      .order('requested_teacher_at', { ascending: true });
+
+    if (error) throw error;
+
+    return res.json({ success: true, data: data || [] });
+  } catch (error: any) {
+    console.error('[Admin] List teacher requests error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/admin/teacher-requests/:id/approve
+ * Approves a teacher access request.
+ * Creates teacher record and updates profile role to 'teacher'.
+ */
+adminRouter.post('/teacher-requests/:id/approve', async (req, res) => {
+  const { employeeId } = req.body;
+  const profileId = req.params.id;
+
+  try {
+    // 1. Get profile
+    const { data: profile, error: profileErr } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', profileId)
+      .single();
+
+    if (profileErr || !profile) {
+      return res.status(404).json({ success: false, message: 'Profile not found' });
+    }
+
+    if (profile.role !== 'teacher_pending') {
+      return res.status(400).json({ success: false, message: 'Not a pending teacher request' });
+    }
+
+    // 2. Update profile role
+    const { error: updateErr } = await supabaseAdmin
+      .from('profiles')
+      .update({ role: 'teacher' })
+      .eq('id', profileId);
+
+    if (updateErr) throw updateErr;
+
+    // 3. Create teacher record
+    const { error: teacherErr } = await supabaseAdmin
+      .from('teachers')
+      .insert({
+        profile_id: profileId,
+        employee_id: employeeId || null,
+        is_active: true
+      });
+
+    if (teacherErr && !teacherErr.message.includes('duplicate')) {
+      throw teacherErr;
+    }
+
+    console.log(`[Admin] Approved teacher access for ${profileId}`);
+    return res.json({ success: true, message: 'Teacher access approved.' });
+
+  } catch (error: any) {
+    console.error('[Admin] Approve teacher error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/admin/teacher-requests/:id/reject
+ * Rejects a teacher access request.
+ */
+adminRouter.post('/teacher-requests/:id/reject', async (req, res) => {
+  const profileId = req.params.id;
+
+  try {
+    // Get profile first
+    const { data: profile, error: profileErr } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', profileId)
+      .single();
+
+    if (profileErr || !profile) {
+      return res.status(404).json({ success: false, message: 'Profile not found' });
+    }
+
+    if (profile.role !== 'teacher_pending') {
+      return res.status(400).json({ success: false, message: 'Not a pending teacher request' });
+    }
+
+    // Reset to student role (or admin, depending on original)
+    const { error: updateErr } = await supabaseAdmin
+      .from('profiles')
+      .update({ 
+        role: 'student',
+        requested_teacher_at: null
+      })
+      .eq('id', profileId);
+
+    if (updateErr) throw updateErr;
+
+    console.log(`[Admin] Rejected teacher access for ${profileId}`);
+    return res.json({ success: true, message: 'Teacher request rejected.' });
+
+  } catch (error: any) {
+    console.error('[Admin] Reject teacher error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // ─── TEACHERS — Full CRUD ───────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -743,6 +866,103 @@ adminRouter.put('/students/:id', async (req, res) => {
     return res.json({ success: true, data: updated });
   } catch (error: any) {
     console.error('[Admin] Update student error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/admin/students/import
+ * Bulk import students from JSON array.
+ * Fields: class_id (string), roll_number (string), full_name (string), college_email (optional)
+ * Validates unique (class_id, roll_number) constraints and email domain.
+ */
+adminRouter.post('/students/import', async (req, res) => {
+  const { data: importData, dryRun } = req.body;
+
+  if (!Array.isArray(importData) || importData.length === 0) {
+    return res.status(400).json({ success: false, message: 'Import data must be a non-empty array.' });
+  }
+
+  try {
+    const results = {
+      totalRequested: importData.length,
+      created: 0,
+      skipped: 0,
+      errors: [] as any[]
+    };
+
+    // Validate email domain (optional)
+    const collegeDomain = '@gvpcdpgc.edu.in';
+
+    for (const row of importData) {
+      const { class_id, roll_number, full_name, college_email } = row;
+
+      if (!class_id || !roll_number || !full_name) {
+        results.skipped++;
+        results.errors.push({ roll_number: roll_number || '?', error: 'Missing class_id, roll_number, or full_name' });
+        continue;
+      }
+
+      // Validate college email format if provided
+      if (college_email && !college_email.endsWith(collegeDomain)) {
+        results.skipped++;
+        results.errors.push({ roll_number, error: `Email must be from domain ${collegeDomain}` });
+        continue;
+      }
+
+      try {
+        // Check if student already exists
+        const { data: existing } = await supabaseAdmin
+          .from('students')
+          .select('id')
+          .eq('class_id', class_id)
+          .eq('roll_number', roll_number)
+          .single();
+
+        if (existing) {
+          results.skipped++;
+          results.errors.push({ roll_number, error: 'Student already exists in this class' });
+          continue;
+        }
+
+        // Insert student row
+        const studentRow: any = {
+          class_id,
+          roll_number,
+          college_email: college_email || null,
+          is_active: true
+        };
+
+        if (dryRun) {
+          results.created++;
+          continue;
+        }
+
+        const { error: insertError } = await supabaseAdmin
+          .from('students')
+          .insert(studentRow);
+
+        if (insertError) {
+          results.skipped++;
+          results.errors.push({ roll_number, error: insertError.message });
+        } else {
+          results.created++;
+        }
+      } catch (err: any) {
+        results.skipped++;
+        results.errors.push({ roll_number, error: err.message });
+      }
+    }
+
+    console.log(`[Admin] Student import: ${results.created}/${results.totalRequested} created, ${results.skipped} skipped.`);
+    return res.json({
+      success: true,
+      data: results,
+      message: dryRun ? `[DRY RUN] Would import ${results.created} students` : `Imported ${results.created} students`
+    });
+
+  } catch (error: any) {
+    console.error('[Admin] Student import error:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 });

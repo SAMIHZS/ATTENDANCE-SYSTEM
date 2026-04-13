@@ -8,43 +8,269 @@ export const studentRouter = Router();
 studentRouter.use(requireAuth);
 
 /**
- * POST /api/v1/student/bind-roll
- * Allows a student to set their roll number and class for the first time.
+ * GET /api/v1/student/candidates
+ * Lists unbound student records for a given class ID, optionally filtered by search.
+ * Used when a new student logs in with personal email and needs to select their identity.
  */
-studentRouter.post('/bind-roll', requireRole('student'), async (req: Request, res: Response) => {
-  const { roll_number, class_id } = req.body;
-  const profileId = req.auth!.profileId;
+studentRouter.get('/candidates', requireRole('student'), async (req: Request, res: Response) => {
+  const { classId, q } = req.query;
 
-  if (!roll_number || !class_id) {
-    return res.status(400).json({ success: false, message: 'Roll number and Class ID are required.' });
+  if (!classId) {
+    return res.status(400).json({ success: false, message: 'classId is required.' });
   }
 
   try {
-    // 1. Check if already bound
-    const { data: existing } = await supabaseAdmin
+    let query = supabaseAdmin
+      .from('students')
+      .select('id, roll_number, full_name, college_email')
+      .eq('class_id', String(classId))
+      .is('profile_id', null)  // Only unbound students
+      .eq('is_active', true)
+      .order('roll_number');
+
+    // Optional search filter (name or roll number)
+    if (q) {
+      const searchTerm = String(q).toLowerCase();
+      // Note: Supabase doesn't support multiple column 'like' in a single query easily
+      // Client-side filtering is acceptable for this use case
+      const { data: results, error } = await query;
+      if (error) throw error;
+      const filtered = (results || []).filter((s: any) =>
+        (s.full_name?.toLowerCase() || '').includes(searchTerm) ||
+        (s.roll_number?.toLowerCase() || '').includes(searchTerm)
+      );
+      return res.json({ success: true, data: filtered });
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    return res.json({ success: true, data: data || [] });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/student/bind-roll
+ * Binds the current authenticated user to a student record by student ID.
+ * 
+ * Body: { studentId }
+ * 
+ * Security:
+ * - Only allows binding to unbound student records
+ * - Only allows student role
+ * - Prevents hijacking (if already bound, must match current user)
+ */
+studentRouter.post('/bind-roll', requireRole('student'), async (req: Request, res: Response) => {
+  const { studentId } = req.body;
+  const profileId = req.auth!.profileId;
+
+  if (!studentId) {
+    return res.status(400).json({ success: false, message: 'studentId is required.' });
+  }
+
+  try {
+    // 1. Check if current user is already bound to a different student
+    const { data: currentBinding } = await supabaseAdmin
       .from('students')
       .select('id')
       .eq('profile_id', profileId)
       .single();
 
-    if (existing) {
-      return res.status(400).json({ success: false, message: 'Student profile already exists.' });
+    if (currentBinding && currentBinding.id !== studentId) {
+      return res.status(409).json({ 
+        success: false, 
+        message: 'You are already bound to a different student record. Contact admin to change.' 
+      });
     }
 
-    // 2. Insert into students table
-    const { data, error } = await supabaseAdmin
+    // 2. Fetch the target student record
+    const { data: target, error: fetchErr } = await supabaseAdmin
       .from('students')
-      .insert({
-        profile_id: profileId,
-        class_id,
-        roll_number
-      })
-      .select()
+      .select('id, profile_id, is_active')
+      .eq('id', studentId)
       .single();
 
-    if (error) throw error;
+    if (fetchErr || !target) {
+      return res.status(404).json({ success: false, message: 'Student record not found.' });
+    }
 
-    return res.status(201).json({ success: true, data });
+    // 3. Check if target is already bound to another user
+    if (target.profile_id && target.profile_id !== profileId) {
+      return res.status(409).json({ 
+        success: false, 
+        message: 'This student record is already claimed by another user. Contact admin if this is incorrect.' 
+      });
+    }
+
+    // 4. Check if target is active
+    if (!target.is_active) {
+      return res.status(403).json({ success: false, message: 'This student record is inactive.' });
+    }
+
+    // 5. Bind: update student.profile_id to current user
+    const { error: updateErr } = await supabaseAdmin
+      .from('students')
+      .update({ profile_id: profileId })
+      .eq('id', studentId);
+
+    if (updateErr) throw updateErr;
+
+    // 6. Ensure profile role is 'student'
+    const { error: profileErr } = await supabaseAdmin
+      .from('profiles')
+      .update({ role: 'student' })
+      .eq('id', profileId);
+
+    if (profileErr) throw profileErr;
+
+    // 7. Return success
+    const { data: bound } = await supabaseAdmin
+      .from('students')
+      .select('id, roll_number, class_id, class:classes(name)')
+      .eq('id', studentId)
+      .single();
+
+    console.log(`[Student] Bound user ${profileId} to student ${studentId}`);
+    return res.json({ success: true, data: bound, message: 'Identity bound successfully.' });
+
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/student/check-college-email
+ * Checks if the current user's email can be auto-bound to a student record.
+ * Called during login/registration to auto-bind college email users.
+ * 
+ * Returns: { canBind, studentId, studentDetails } or { canBind: false }
+ */
+studentRouter.post('/check-college-email', requireRole('student'), async (req: Request, res: Response) => {
+  const profileId = req.auth!.profileId;
+
+  try {
+    // 1. Get user email from auth
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(profileId);
+    const email = authUser?.user?.email;
+
+    if (!email) {
+      return res.json({ canBind: false, reason: 'No email found' });
+    }
+
+    // 2. Check if email matches college domain pattern
+    const collegeEmailRegex = /^([0-9-]+)@gvpcdpgc\.edu\.in$/;
+    const match = email.match(collegeEmailRegex);
+
+    if (!match) {
+      return res.json({ canBind: false, reason: 'Not a college email' });
+    }
+
+    const rollCandidate = match[1];
+
+    // 3. Try to find matching student by roll number
+    const { data: students } = await supabaseAdmin
+      .from('students')
+      .select('id, roll_number, class_id, full_name, is_active, profile_id')
+      .eq('roll_number', rollCandidate)
+      .eq('is_active', true);
+
+    if (!students || students.length === 0) {
+      return res.json({ canBind: false, reason: 'No student record found for this roll number' });
+    }
+
+    const student = students[0];
+
+    // 4. Check if already bound
+    if (student.profile_id) {
+      if (student.profile_id === profileId) {
+        return res.json({ canBind: true, alreadyBound: true, studentId: student.id });
+      } else {
+        return res.json({ canBind: false, reason: 'Roll number is already claimed by another user' });
+      }
+    }
+
+    // 5. Can bind!
+    return res.json({ 
+      canBind: true, 
+      studentId: student.id, 
+      studentDetails: {
+        rollNumber: student.roll_number,
+        className: student.class_id,
+        fullName: student.full_name
+      }
+    });
+
+  } catch (error: any) {
+    console.error('[Student] College email check error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/student/bind-via-college-email
+ * Auto-binds user to student record if college email matches.
+ * Called after college email verification.
+ */
+studentRouter.post('/bind-via-college-email', requireRole('student'), async (req: Request, res: Response) => {
+  const profileId = req.auth!.profileId;
+
+  try {
+    // 1. Get user email from auth
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(profileId);
+    const email = authUser?.user?.email;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'No email found' });
+    }
+
+    // 2. Extract roll from email
+    const collegeEmailRegex = /^([0-9-]+)@gvpcdpgc\.edu\.in$/;
+    const match = email.match(collegeEmailRegex);
+
+    if (!match) {
+      return res.status(400).json({ success: false, message: 'Not a valid college email' });
+    }
+
+    const rollCandidate = match[1];
+
+    // 3. Find matching student
+    const { data: students } = await supabaseAdmin
+      .from('students')
+      .select('id, profile_id, is_active')
+      .eq('roll_number', rollCandidate)
+      .eq('is_active', true);
+
+    if (!students || students.length === 0) {
+      return res.status(404).json({ success: false, message: 'No student record found' });
+    }
+
+    const student = students[0];
+
+    // 4. Prevent hijacking
+    if (student.profile_id && student.profile_id !== profileId) {
+      return res.status(409).json({ success: false, message: 'This roll number is already claimed' });
+    }
+
+    // 5. Bind
+    const { error: updateErr } = await supabaseAdmin
+      .from('students')
+      .update({ profile_id: profileId })
+      .eq('id', student.id);
+
+    if (updateErr) throw updateErr;
+
+    const { error: profileErr } = await supabaseAdmin
+      .from('profiles')
+      .update({ role: 'student' })
+      .eq('id', profileId);
+
+    if (profileErr) throw profileErr;
+
+    console.log(`[Student] Auto-bound user ${profileId} via college email to student ${student.id}`);
+    return res.json({ success: true, message: 'Successfully bound via college email' });
+
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }

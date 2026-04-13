@@ -144,6 +144,62 @@ authRouter.post('/login', loginLimiter, async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/v1/auth/request-teacher
+ * Allows any authenticated student to request teacher access.
+ * Sets profile.requested_teacher_at timestamp and role to 'teacher_pending' if not already teacher.
+ * Admin must approve via admin panel.
+ */
+authRouter.post('/request-teacher', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const profileId = req.auth!.profileId;
+
+    // 1. Get current profile
+    const { data: profile, error: getErr } = await supabaseAdmin
+      .from('profiles')
+      .select('role, requested_teacher_at')
+      .eq('id', profileId)
+      .single();
+
+    if (getErr) throw getErr;
+
+    // 2. Check if already teacher
+    if (profile.role === 'teacher') {
+      return res.status(400).json({ success: false, message: 'You are already a teacher.' });
+    }
+
+    // 3. Check if already requested
+    if (profile.requested_teacher_at) {
+      return res.json({ 
+        success: true, 
+        message: 'Your teacher request is pending admin approval.',
+        alreadyRequested: true
+      });
+    }
+
+    // 4. Update profile to mark request
+    const { error: updateErr } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        role: 'teacher_pending',
+        requested_teacher_at: new Date().toISOString()
+      })
+      .eq('id', profileId);
+
+    if (updateErr) throw updateErr;
+
+    console.log(`[Auth] User ${profileId} requested teacher access`);
+    return res.json({ 
+      success: true, 
+      message: 'Teacher access request submitted. Awaiting admin approval.' 
+    });
+
+  } catch (error: any) {
+    console.error('[Auth] Request teacher error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
  * GET /api/v1/auth/me
  * Retrieves the current session user's profile and binding status
  */
